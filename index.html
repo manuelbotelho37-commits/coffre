@@ -403,7 +403,7 @@ function bkReminder(){
   const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
   const last = hasFiles ? f : Math.max(f,l);
   if(last && (Date.now()-last) < 30*24*3600*1000) return '';
-  return `<div class="warn" style="margin-top:12px">💾 Pense à faire une sauvegarde${hasFiles?' complète (avec tes photos)':''} : tout est gardé sur ce téléphone seulement.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
+  return `<div class="warn" style="margin-top:12px">💾 Pense à faire une sauvegarde (avec tes photos) : tout est gardé sur ce téléphone seulement.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
 }
 function renderWarn(){
   const el=$('#warnRow'); if(!el) return;
@@ -915,17 +915,16 @@ async function doDelete(id){
 /* ---------- Réglages ---------- */
 function lastBkText(){
   const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
-  const fm=t=>new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
-  if(!f && !l) return 'Aucune sauvegarde faite sur cet appareil.';
-  return (f?'Dernière sauvegarde complète : '+fm(f)+'. ':'')+(l?'Dernière sauvegarde légère : '+fm(l)+'.':'');
+  const t=Math.max(f,l);
+  if(!t) return 'Aucune sauvegarde faite sur cet appareil.';
+  return 'Dernière sauvegarde : '+new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'.';
 }
 function openSettings(){
   openModal(`<h2>Réglages</h2>
     <p style="color:var(--dim); font-size:.8rem; margin:4px 0 6px">${esc(lastBkText())}</p>
     <button class="setbtn" onclick="changePwForm()">🔑 Changer le code secret</button>
-    <button class="setbtn" onclick="doBackupFull()">💾 Sauvegarde complète<small>Textes + photos + fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
-    <button class="setbtn" onclick="doBackup()">📝 Sauvegarde légère<small>Textes seulement : petit fichier, rapide.</small></button>
-    <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>Complète ou légère : l'appli reconnaît le fichier toute seule.</small></button>
+    <button class="setbtn" onclick="doBackupFull()">💾 Faire une sauvegarde<small>Textes, photos et fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
+    <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>L'appli reconnaît toute seule le fichier de sauvegarde.</small></button>
     <input type="file" id="restFile" style="display:none" onchange="onRestoreFile(event)">
     <button class="setbtn" onclick="closeModal()" style="margin-top:18px">Fermer</button>`);
 }
