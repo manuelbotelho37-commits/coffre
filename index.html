@@ -3,1073 +3,1540 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<title>Coffre</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#14181d">
+<title>Vente</title>
+<link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#14181d; --surface:#1c222a; --surface2:#242b34; --line:#323a45;
-    --text:#e9e7e1; --dim:#8b94a1; --brass:#c89b3c; --green:#5f9e79; --red:#c4635a;
+    --text:#e9e7e1; --dim:#8b94a1; --brass:#c89b3c; --brass-dim:#8f7331;
+    --blue:#5b93b0; --green:#5f9e79; --red:#b4574f;
+    --lock-on:#f5a524; --lock-off:#22e06b;
     box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
   }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#14181d; --surface:#1c222a; --surface2:#242b34; --line:#323a45; --text:#e9e7e1; --dim:#8b94a1;
+    }
+  }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html{scroll-padding-top:env(safe-area-inset-top,0px);}
-  body{margin:0; min-height:100%; background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
-  h1,h2,.serif{font-family:'Fraunces',serif; font-weight:600;}
-  .wrap{max-width:640px; margin:0 auto; padding:0 18px 120px;}
-  .center{max-width:420px; margin:0 auto; padding:70px 22px 40px; text-align:center;}
-  .center h1{font-size:2.2rem; margin:12px 0 6px;}
-  .center p{color:var(--dim); font-size:.95rem; line-height:1.5; margin:0 0 22px;}
-  .big{font-size:3rem;}
-  input,textarea{width:100%; padding:14px; background:var(--surface2); border:1px solid var(--line); border-radius:10px; color:var(--text); font-size:1rem; font-family:inherit;}
-  input:focus,textarea:focus{outline:none; border-color:var(--brass);}
-  textarea{min-height:90px; resize:vertical;}
-  label{display:block; text-align:left; font-size:.8rem; color:var(--dim); margin:14px 0 6px;}
-  button{font-family:inherit; font-size:1rem; cursor:pointer; border-radius:10px; padding:14px 16px; border:1px solid var(--line); background:var(--surface2); color:var(--text);}
-  .primary{background:var(--brass); color:#1a1508; border-color:var(--brass); font-weight:600; width:100%; margin-top:18px;}
-  .danger{color:var(--red); border-color:#5a2f2b;}
-  .err{color:var(--red); font-size:.88rem; min-height:1.2em; margin-top:12px;}
-  .warn{background:#2a2414; border:1px solid #5a4a1c; color:#e8d49a; padding:12px 14px; border-radius:10px; font-size:.85rem; line-height:1.45; text-align:left; margin:0 0 6px;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+  body{
+    margin:0; min-height:100%; background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,.serif{font-family:'Fraunces',serif;}
+  .wrap{max-width:640px; margin:0 auto; padding:0 18px 100px;}
+  header{padding:22px 0 14px; position:sticky; top:env(safe-area-inset-top,0px); background:var(--bg); z-index:5; border-bottom:1px solid var(--line);}
+  header h1{font-size:1.7rem; font-weight:600; margin:0; letter-spacing:-.01em;}
+  header p{margin:4px 0 0; color:var(--dim); font-size:.85rem;}
 
-  header{display:flex; align-items:center; justify-content:space-between; padding:22px 0 12px; position:sticky; top:env(safe-area-inset-top,0px); background:var(--bg); z-index:5;}
-  header h1{margin:0; font-size:1.7rem;}
-  .hbtn{display:flex; gap:8px;}
-  .hbtn button{padding:10px 14px; font-size:.9rem;}
-  .chips{display:flex; gap:8px; overflow-x:auto; padding:12px 0 6px;}
-  .chip{white-space:nowrap; padding:10px 16px; border-radius:22px; background:transparent; font-size:.92rem; color:var(--dim);}
-  .chip.on{background:var(--brass); color:#1a1508; border-color:var(--brass); font-weight:600;}
-  .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; margin-top:10px; overflow:hidden;}
-  .card.open{border-color:var(--brass);}
-  .head{display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer;}
-  .ico{font-size:1.5rem; width:34px; text-align:center;}
-  .ttl{flex:1; min-width:0;}
-  .ttl b{display:block; font-size:1.02rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .ttl span{display:block; color:var(--dim); font-size:.84rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .chev{color:var(--dim);}
-  .body{padding:0 14px 14px; border-top:1px solid var(--line);}
-  .fld{padding:12px 0 4px;}
-  .fld+.fld{border-top:1px solid var(--line); margin-top:10px; padding-top:14px;}
-  .fld .val{align-items:flex-start;}
-  .fld small{display:block; color:var(--dim); font-size:.76rem; margin-bottom:5px;}
-  .fld .val{display:flex; align-items:center; gap:8px;}
-  .fld .txt{flex:1; word-break:break-all; font-size:1.02rem; font-family:ui-monospace,Menlo,monospace; white-space:pre-wrap;}
-  .fld .txt.plain{font-family:inherit;}
-  .fld button{padding:9px 12px; font-size:.84rem;}
-  .acts{display:flex; gap:8px; margin-top:16px;}
-  .acts button{flex:1; padding:12px;}
-  .empty{text-align:center; color:var(--dim); padding:50px 12px; font-size:.95rem; line-height:1.5;}
-  .fab{position:fixed; right:18px; bottom:calc(20px + env(safe-area-inset-bottom,0px)); background:var(--brass); color:#1a1508; border:none; font-weight:700; padding:16px 22px; border-radius:30px; box-shadow:0 6px 20px rgba(0,0,0,.45); z-index:6;}
+  .dash{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:16px 0;}
+  .dash .card{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 10px;}
+  .dash .card .v{font-family:'Fraunces',serif; font-size:1.15rem; font-weight:600; line-height:1.15;}
+  .dash .card .l{color:var(--dim); font-size:.68rem; margin-top:3px;}
+  .dash > .card:last-child:nth-child(odd){grid-column:1 / -1;}
+  .dash .dash-row .card{grid-column:auto; min-width:0;}
+  .dash .dash-row{grid-column:1 / -1; display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
 
-  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:20; padding:12px;}
-  .sheet{background:var(--surface); width:100%; max-width:640px; max-height:90%; overflow:auto; border-radius:20px; padding:20px 18px 18px;}
-  .foot{position:sticky; bottom:-18px; background:var(--surface); padding:12px 0 18px; margin-top:6px;}
-  .sheet h2{margin:0 0 4px; font-size:1.3rem;}
-  .row2{display:flex; gap:8px;}
-  .row2 button{flex:1;}
-  .gen{margin-top:8px; padding:10px 14px; font-size:.85rem; width:auto;}
-  .toast{position:fixed; left:50%; bottom:calc(90px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:#0c0f13; border:1px solid var(--line); padding:12px 18px; border-radius:24px; font-size:.9rem; z-index:30; max-width:90%; text-align:center;}
-  .xblk{margin-top:14px; position:relative;}
-  .xtra,.xpad{padding-right:96px;}
-  .xdel{position:absolute; top:8px; right:8px; padding:7px 12px; font-size:.82rem; color:var(--red); border-color:#5a2f2b; background:var(--surface);}
-  .lockbtn{display:flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; border-radius:6px; border:1.5px solid; line-height:1; flex:none;}
-  .lockbtn.closed{color:#ff5f56; border-color:#ff5f56; background:rgba(255,95,86,.12);}
-  .lockbtn.open{color:#3ddc84; border-color:#3ddc84; background:rgba(61,220,132,.12);}
-  .lockbtn svg{width:16px; height:16px; fill:currentColor; stroke:currentColor; stroke-width:2; stroke-linecap:round;}
-  .lockbtn svg .sh{fill:none;}
-  .dhead{display:flex; align-items:center; gap:12px; padding:20px 0 14px; position:sticky; top:env(safe-area-inset-top,0px); background:var(--bg); z-index:5; border-bottom:1px solid var(--line);}
-  .back{padding:6px 14px; font-size:1.4rem; line-height:1;}
-  .dtitle{flex:1; min-width:0; font-family:'Fraunces',serif; font-weight:600; font-size:1.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  #detailwrap .body{padding:0 0 40px; border-top:none;}
-  .blk{border:1px solid var(--line); border-radius:10px; background:var(--surface2); overflow:hidden;}
-  .blk textarea.hid{display:none;}
-  .xblk.fonly .xdel{display:none;}
-  .blk.fonly .fl{padding-top:0;}
-  .fld.ro{border:1px solid var(--line); border-radius:10px; background:var(--surface2); padding:6px 12px; margin-top:12px;}
-  .fld.ro .frow:first-child{border-top:none;}
-  .fld.ro+.fld.ro{border-top:1px solid var(--line); padding-top:6px; margin-top:12px;}
-  .blk:focus-within{border-color:var(--brass);}
-  .blk textarea.etext{min-height:48px; border:none; background:transparent; border-radius:0; resize:vertical; margin:0;}
-  .blk textarea.etext:focus{border:none;}
-  .fbtns{display:flex; gap:6px; flex-wrap:wrap; padding:8px 10px; border-top:1px solid var(--line);}
-  .fbtns .gen{margin:0; padding:6px 10px; font-size:.76rem; border-radius:8px; white-space:nowrap;}
-  .fl{margin:0; padding:0 10px;}
-  .fl:empty{display:none;}
-  .frow{display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line);}
-  .fbad{width:64px; height:64px; border-radius:8px; border:1px dashed var(--red); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; color:var(--red); flex:none;}
-  .fbad small{font-size:.62rem; margin-top:2px;}
-  .fthumb{width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--line); background:var(--surface2); cursor:pointer;}
-  .ficon{font-size:1.8rem; width:64px; text-align:center;}
-  .fname{flex:1; min-width:0; word-break:break-all; font-size:.92rem; cursor:pointer;}
-  .fname small{display:block; color:var(--dim); font-size:.75rem; margin-top:2px;}
-  .ren2{padding:7px 12px; font-size:.82rem;}
-  .xdel2{padding:7px 12px; font-size:.82rem; color:var(--red); border-color:#5a2f2b;}
-  .lnks{margin-top:8px;}
-  .blk .lnks{margin:0; padding:0 10px;}
-  .blk .lnks:empty{display:none;}
-  .lnk{display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 0; border-top:1px solid var(--line);}
-  .lnk .lu{flex:1 1 100%; color:var(--brass); font-size:.8rem; word-break:break-all;}
-  .lnk button{padding:8px 14px; font-size:.84rem;}
-  .frow.ro{cursor:default;}
-  .frow.ro .fthumb{cursor:default; pointer-events:none;}
-  .fopen{color:var(--dim); font-size:.85rem; padding-right:4px;}
-  .flro{margin-top:4px;}
-  .fgrid{display:flex; flex-direction:column; gap:10px; margin-top:12px; align-items:flex-start;}
-  .fimg{max-width:100%; max-height:62vh; width:auto; height:auto; object-fit:contain; border-radius:10px; border:1px solid var(--line); background:var(--surface2); cursor:pointer;}
-  .fchip{padding:10px 14px; font-size:.92rem; text-align:left;}
-  .fchip small{color:var(--dim); margin-left:6px;}
-  .lockrow{display:flex; justify-content:flex-end; padding-top:12px;}
-  .lockedhint{margin-top:16px; color:var(--dim); font-size:.84rem; text-align:center;}
-  #f_text{margin-top:14px;}
-  .keep{display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:12px 0 4px; cursor:pointer;}
-  .keep b{display:block; font-size:.95rem;}
-  .keep span{display:block; color:var(--dim); font-size:.78rem; margin-top:3px; line-height:1.35;}
-  .sw{flex:none; width:58px; height:32px; border-radius:16px; background:#3a424d; position:relative; transition:background .2s;}
-  .sw i{position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:#fff; transition:left .2s;}
-  .sw.on{background:var(--green);}
-  .sw.on i{left:29px;}
-  .setbtn{width:100%; text-align:left; margin-top:10px;}
-  .setbtn small{display:block; color:var(--dim); font-size:.78rem; margin-top:3px;}
+  .actions{display:flex; gap:8px; margin:14px 0;}
+  button{font-family:inherit; cursor:pointer; border:none;}
+  .btn-primary{flex:1; background:var(--brass); color:#1a1508; font-weight:600; padding:12px; border-radius:9px; font-size:.95rem;}
+  .btn-secondary{background:var(--surface2); color:var(--text); padding:12px 16px; border-radius:9px; border:1px solid var(--line); font-size:.95rem;}
+  .btn-secondary:disabled{opacity:.35;}
+
+  .search{width:100%; padding:11px 14px; background:var(--surface); border:1px solid var(--line); border-radius:9px; color:var(--text); font-size:.9rem; margin-bottom:12px;}
+  .search::placeholder{color:var(--dim);}
+
+  .tabs{display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px;}
+  .tab{white-space:nowrap; padding:8px 14px; border-radius:20px; background:var(--surface); color:var(--dim); font-size:.83rem; border:1px solid var(--line);}
+  .tab.active{background:var(--brass); color:#1a1508; border-color:var(--brass); font-weight:600;}
+
+  .empty{text-align:center; color:var(--dim); padding:50px 10px; font-size:.9rem;}
+
+  .client{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px 14px 20px; margin-bottom:9px; position:relative; overflow:hidden; transition:box-shadow .2s;}
+  .client-tab{position:absolute; left:0; top:0; bottom:0; width:7px; border-radius:12px 0 0 12px; box-shadow:2px 0 10px -2px currentColor;}
+  .field-box{position:relative;}
+  .value-row{display:flex; align-items:center; gap:7px;}
+  .value-row input, .value-row select{flex:1; min-width:0;}
+  .field-color-dot{width:13px; height:13px; flex-shrink:0; border-radius:4px; border:1.5px solid var(--line); cursor:pointer; -webkit-tap-highlight-color:transparent; background:var(--surface2);}
+  .field-lock-btn{width:20px; height:20px; flex-shrink:0; border-radius:5px; border:none; display:flex; align-items:center; justify-content:center; font-size:.7rem; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent; background:var(--lock-on);}
+  .field-suffix-inline{flex-shrink:0; color:var(--dim); font-size:.85rem; white-space:nowrap;}
+  .field-popover{position:fixed; z-index:300; display:none; flex-wrap:wrap; gap:9px; width:172px; background:var(--surface2); border:1px solid var(--line); border-radius:14px; padding:12px; box-shadow:0 10px 30px rgba(0,0,0,.45);}
+  .field-popover.open{display:flex;}
+  .field-color-swatch{width:30px; height:30px; border-radius:50%; border:2px solid var(--line); cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .client .top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .client .name{font-family:'Fraunces',serif; font-weight:600; font-size:1.05rem;}
+  .client .meta{color:var(--dim); font-size:.78rem; margin-top:5px;}
+  .client .amount{font-weight:600; font-size:1rem; text-align:right; white-space:nowrap;}
+  .badge{display:inline-block; font-size:.68rem; font-weight:600; padding:3px 9px; border-radius:20px; margin-top:8px;}
+  .badge.encours{background:rgba(91,147,176,.18); color:var(--blue);}
+  .badge.termine{background:rgba(95,158,121,.18); color:var(--green);}
+  .badge.annule{background:rgba(180,87,79,.18); color:var(--red);}
+
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:flex-end; z-index:20;}
+  .overlay.open{display:flex;}
+  .sheet{background:var(--surface); width:100%; max-height:88vh; overflow-y:auto; border-radius:18px 18px 0 0; padding:20px 18px calc(40px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line);}
+  .sheet h2{font-size:1.2rem; margin:0 0 16px;}
+  label{display:block; font-size:.78rem; color:var(--dim); margin:14px 0 6px;}
+  input,select{width:100%; padding:11px 13px; background:var(--surface2); border:1px solid var(--line); border-radius:9px; color:var(--text); font-size:.95rem; font-family:inherit;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-top:16px;}
+  .row3 label{font-size:.72rem; margin:0 0 5px;}
+  .row3 select, .row3 input{padding:10px 8px; font-size:.82rem;}
+  .row3 .euro-suffix{right:7px; font-size:.72rem;}
+  .calc{color:var(--dim); font-size:.78rem; margin-top:6px;}
+  .sheet-actions{display:flex; gap:10px; margin-top:22px;}
+  .btn-danger{background:none; color:var(--red); padding:12px; font-size:.85rem;}
+  .paiement-row{display:flex; align-items:center; gap:12px; background:var(--surface2); border:1px solid var(--line); border-radius:9px; padding:12px 13px; margin-bottom:8px; cursor:pointer;}
+  .paiement-row.locked{cursor:default;}
+  .paiement-row.locked .euro-wrap, .paiement-row.locked input[type=date]{pointer-events:none;}
+  .paiement-row input[type=checkbox]{
+    -webkit-appearance:none; appearance:none;
+    width:24px; height:24px; flex-shrink:0;
+    border:2px solid var(--line); border-radius:6px;
+    background:var(--surface2); position:relative; cursor:pointer;
+  }
+  .paiement-row input[type=checkbox]:checked{
+    background:var(--brass); border-color:var(--brass);
+  }
+  .paiement-row input[type=checkbox]:checked::after{
+    content:'\2713'; position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-56%); color:#1a1508; font-size:16px; font-weight:800;
+  }
+  .paiement-row input[type=checkbox]:disabled{opacity:.55;}
+  .paiement-row .plabel{font-size:.9rem;}
+  .paiement-row .pmontant{color:var(--dim); font-size:.78rem; margin-top:2px;}
+  .paiement-row.paid .plabel{color:var(--green);}
+  .ptotal{color:var(--dim); font-size:.8rem; margin-top:10px; text-align:right;}
+  .euro-wrap{position:relative;}
+  .euro-wrap input{padding-right:32px;}
+  .euro-wrap .euro-suffix{position:absolute; right:13px; top:50%; transform:translateY(-50%); color:var(--dim); font-size:.9rem; pointer-events:none;}
+  .pdate{background:var(--surface); border:1px solid var(--line); border-radius:7px; color:var(--text); font-size:.75rem; padding:6px 7px; width:118px; flex-shrink:0;}
+  .doc-item{display:flex; flex-direction:column; gap:7px; background:var(--surface2); border:1px solid var(--line); border-radius:9px; padding:10px 12px; margin-bottom:7px;}
+  .doc-item .doc-name{font-size:.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .doc-item .doc-actions{display:flex; gap:16px; flex-wrap:wrap;}
+  .doc-item .doc-actions button{background:none; border:none; color:var(--blue); font-size:.8rem; padding:4px 2px;}
+  .doc-item .doc-actions button.del{color:var(--red);}
+  .xl-wrap{text-align:left; overflow:auto; max-height:58vh; border:1px solid var(--line); border-radius:8px; background:var(--surface2);}
+  .xl-wrap table{border-collapse:collapse; font-size:.74rem; color:var(--text);}
+  .xl-wrap td,.xl-wrap th{border:1px solid var(--line); padding:5px 8px; white-space:nowrap;}
+  .xl-tabs{display:flex; gap:6px; overflow-x:auto; margin:0 0 10px; padding-bottom:2px;}
+  .xl-tabs button{white-space:nowrap; padding:6px 12px; border-radius:16px; border:1px solid var(--line); background:var(--surface); color:var(--dim); font-size:.78rem;}
+  .xl-tabs button.on{background:var(--brass); color:#1a1508; border-color:var(--brass); font-weight:600;}
 </style>
 </head>
 <body>
-<div id="app"><div class="center"><div class="big">🔐</div><p>Chargement…</p></div></div>
-<div id="modal"></div>
-<div id="toast"></div>
+<div class="wrap">
+  <header>
+    <h1>Vente</h1>
+  </header>
 
+  <div class="dash">
+    <div class="card"><div class="v" id="dashCours">0 €</div><div class="l">Commission en cours</div></div>
+    <div class="card"><div class="v" id="dashTermine">0 €</div><div class="l">Commission déjà réglée</div></div>
+    <div class="card"><div class="v" id="dashReste">0 €</div><div class="l">Commission à percevoir</div></div>
+    <div class="card"><div class="v" id="dashCAMaison">0 €</div><div class="l">CA maison vendu</div></div>
+    <div class="dash-row">
+      <div class="card"><div class="v" id="dashCount">0</div><div class="l">Clients actifs</div></div>
+      <div class="card"><div class="v" id="dashTermines">0</div><div class="l">Clients terminés</div></div>
+      <div class="card"><div class="v" id="dashAnnules">0</div><div class="l">Clients annulés</div></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="openForm()">+ Nouveau client</button>
+    <button class="btn-secondary" onclick="openBackup()" title="Sauvegarde et transfert" style="min-width:46px; text-align:center;">⇅</button>
+  </div>
+
+  <div style="margin-bottom:16px;">
+    <label style="margin:0 0 6px; display:block;">Notes générales (infos à classer)</label>
+    <div style="position:relative; background:var(--surface2); border:1px solid var(--line); border-radius:9px; overflow:hidden;">
+      <textarea id="globalNotes" rows="3" placeholder="Note ici des infos en vrac (dates, dépôts de PC, feux verts...) à reclasser plus tard dans les fiches clients." style="display:block; width:100%; padding:11px 100px 11px 13px; background:transparent; border:none; color:var(--text); font-size:.9rem; font-family:inherit; resize:vertical;" oninput="saveGlobalNotes()" onkeydown="handleGlobalNotesKey(event)" onfocus="if(!this.value) this.value='• ';"></textarea>
+      <div style="position:absolute; top:8px; right:10px; display:flex; align-items:center; gap:8px;">
+        <span id="notesSavedMsg" style="display:none; color:var(--green); font-size:.72rem;">✓</span>
+        <button type="button" class="btn-secondary" onclick="saveGlobalNotesManual()" style="padding:5px 11px; font-size:.75rem;">Enregistrer</button>
+        <button type="button" id="btnLockNotes" onclick="toggleLockNotes()" style="background:var(--lock-off); border:none; border-radius:6px; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:.85rem; padding:0; cursor:pointer;">🔓</button>
+      </div>
+    </div>
+  </div>
+
+  <input class="search" id="search" placeholder="Rechercher client ou GED" oninput="render()">
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-f="encours" onclick="setFilter('encours')">En cours</div>
+    <div class="tab" data-f="termine" onclick="setFilter('termine')">Terminés</div>
+    <div class="tab" data-f="tous" onclick="setFilter('tous')">Tous les clients</div>
+    <div class="tab" data-f="annule" onclick="setFilter('annule')">Annulations</div>
+    <div class="tab" data-f="commission" onclick="setFilter('commission')">Commissions</div>
+  </div>
+
+  <div id="commissionPanel" style="display:none;">
+    <div style="background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:16px;">
+      <label style="margin:0 0 8px; display:block;">Ajouter mon tableau de commission</label>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <span style="color:var(--dim); font-size:.85rem; white-space:nowrap;">Mois :</span>
+        <input type="month" id="commMonth" style="flex:1; padding:10px 12px; background:var(--surface2); border:1px solid var(--line); border-radius:9px; color:var(--text); font-size:.95rem;">
+      </div>
+      <input type="file" id="commFile" style="display:none" onchange="onCommissionFileChange(event)">
+      <input type="file" id="commPhoto" accept="image/*" capture="environment" style="display:none" onchange="onCommissionFileChange(event)">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn-primary" style="flex:1; min-width:140px;" onclick="document.getElementById('commFile').click()">📄 Choisir le fichier</button>
+        <button type="button" class="btn-secondary" style="flex:1; min-width:110px;" onclick="document.getElementById('commPhoto').click()">📷 Photo</button>
+      </div>
+      <div id="commMsg" style="display:none; margin-top:10px; font-size:.8rem;"></div>
+    </div>
+    <div id="commissionList"></div>
+  </div>
+
+  <div id="list"></div>
+  <div id="fieldColorPopover" class="field-popover"></div>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeForm()">
+  <div class="sheet">
+    <h2 id="formTitle">Nouveau client</h2>
+    <input type="hidden" id="editId">
+    <div class="row2">
+      <div id="wrapNom"><label>Nom du client</label><div class="value-row"><input id="fNom" placeholder="Nom" style="text-transform:uppercase" oninput="uppercaseField(this)"><span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('nom', this)"></span><button type="button" id="btnLockNom" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('nom')">🔒</button></div></div>
+      <div><label>Couleur</label>
+        <select id="fCouleur" onchange="onIdentityFieldChange()">
+          <option value="" style="background:#2a2a2a;color:#fff;">Aucune</option>
+          <option value="#ef4444" style="background:#ef4444;color:#fff;">Rouge</option>
+          <option value="#f97316" style="background:#f97316;color:#fff;">Orange</option>
+          <option value="#eab308" style="background:#eab308;color:#000;">Jaune</option>
+          <option value="#22c55e" style="background:#22c55e;color:#000;">Vert</option>
+          <option value="#3b82f6" style="background:#3b82f6;color:#fff;">Bleu</option>
+          <option value="#a855f7" style="background:#a855f7;color:#fff;">Violet</option>
+          <option value="#ec4899" style="background:#ec4899;color:#fff;">Rose</option>
+          <option value="#6b7280" style="background:#6b7280;color:#fff;">Gris</option>
+        </select>
+      </div>
+    </div>
+    <div id="wrapGed" class="field-box">
+      <label>Numéro de GED</label>
+      <div class="value-row"><input id="fGed" placeholder="Ex. 50903" oninput="onIdentityFieldChange()"><span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('ged', this)"></span><button type="button" id="btnLockGed" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('ged')">🔒</button></div>
+    </div>
+    <div class="row2">
+      <div id="wrapDate" class="field-box">
+        <label>Date de vente</label>
+        <div class="value-row"><input id="fDate" type="date" onchange="onIdentityFieldChange()"><span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('date', this)"></span><button type="button" id="btnLockDate" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('date')">🔒</button></div>
+      </div>
+      <div id="wrapStatut" class="field-box">
+        <label>Statut</label>
+        <div class="value-row">
+          <select id="fStatut" onchange="onIdentityFieldChange()">
+            <option value="encours">En cours</option>
+            <option value="termine">Terminé</option>
+            <option value="annule">Annulé</option>
+          </select>
+          <span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('statut', this)"></span>
+          <button type="button" id="btnLockStatut" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('statut')">🔒</button>
+        </div>
+      </div>
+    </div>
+    <div class="row3">
+      <div id="wrapPrix" class="field-box">
+        <label>Prix de vente (€)</label>
+        <div class="value-row"><input id="fPrix" type="number" inputmode="decimal" oninput="updateCalc()"><span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('prix', this)"></span><button type="button" id="btnLockPrix" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('prix')">🔒</button><span class="field-suffix field-suffix-inline">€ HT</span></div>
+        <div id="prixTTCOut" class="field-sub" style="font-size:.72rem; color:var(--dim); margin-top:4px;"></div>
+      </div>
+      <div id="wrapCommissionPct" class="field-box">
+        <label>Commission (%)</label>
+        <div class="value-row">
+        <select id="fCommissionPct" onchange="onCommissionPctChange()" style="display:block; width:100%; background:var(--surface2); border:1px solid var(--line); border-radius:9px; color:var(--text); font-family:inherit; padding-right:28px;">
+          <option value="">—</option>
+          <option value="2.5">2,5 %</option>
+          <option value="2.6">2,6 %</option>
+          <option value="2.7">2,7 %</option>
+          <option value="2.8">2,8 %</option>
+          <option value="2.9">2,9 %</option>
+          <option value="3.0">3,0 %</option>
+          <option value="3.1">3,1 %</option>
+          <option value="3.2">3,2 %</option>
+          <option value="3.3">3,3 %</option>
+          <option value="3.4">3,4 %</option>
+          <option value="3.5">3,5 %</option>
+          <option value="3.6">3,6 %</option>
+          <option value="3.7">3,7 %</option>
+          <option value="3.8">3,8 %</option>
+          <option value="3.9">3,9 %</option>
+          <option value="4.0">4,0 %</option>
+          <option value="4.1">4,1 %</option>
+          <option value="4.2">4,2 %</option>
+          <option value="4.3">4,3 %</option>
+          <option value="4.4">4,4 %</option>
+          <option value="4.5">4,5 %</option>
+          <option value="4.6">4,6 %</option>
+          <option value="4.7">4,7 %</option>
+          <option value="4.8">4,8 %</option>
+          <option value="4.9">4,9 %</option>
+          <option value="5.0">5,0 %</option>
+        </select>
+        <span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('commissionPct', this)"></span>
+        <button type="button" id="btnLockCommissionPct" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('commissionPct')">🔒</button>
+        </div>
+      </div>
+      <div id="wrapCoCommission" class="field-box">
+        <label>Commission (€)</label>
+        <div class="value-row"><input id="fCoCommission" type="number" inputmode="decimal" placeholder="0" oninput="onCoCommissionInput()"><span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('coCommission', this)"></span><button type="button" id="btnLockCoCommission" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('coCommission')">🔒</button><span class="field-suffix field-suffix-inline">€</span></div>
+      </div>
+    </div>
+    <div class="row2" style="margin-top:16px; align-items:end;">
+      <div id="wrapRemise" class="field-box">
+        <label>Remise (%)</label>
+        <div class="value-row"><input id="fRemise" type="number" inputmode="decimal" oninput="updateCalc()"><span class="field-color-dot" onclick="event.stopPropagation(); openFieldColorPicker('remise', this)"></span><button type="button" id="btnLockRemise" class="field-lock-btn" onclick="event.stopPropagation(); toggleFieldLock('remise')">🔒</button></div>
+      </div>
+      <div style="display:flex; align-items:flex-end; gap:5px;">
+        <button type="button" class="btn-primary" style="flex:1; padding:13px 4px; font-size:.78rem;" onclick="saveClient()">Enregistrer</button>
+        <button type="button" id="btnUndo" class="btn-secondary" style="padding:13px 12px; font-size:1rem; flex-shrink:0;" onclick="undoAction()" title="Revenir en arrière">↺</button>
+        <button type="button" id="btnRedo" class="btn-secondary" style="padding:13px 12px; font-size:1rem; flex-shrink:0;" onclick="redoAction()" title="Revenir en avant">↻</button>
+      </div>
+    </div>
+
+    <div id="paiementsSection" style="display:none; margin-top:22px; padding-top:18px; border-top:1px solid var(--line);">
+      <label style="margin:0 0 10px;">Suivi des règlements</label>
+      <div class="paiement-row" id="rowSignature" onclick="togglePaiement('signature')">
+        <input type="checkbox" id="pSignature" onclick="event.stopPropagation(); togglePaiement('signature')">
+        <div style="flex:1;"><div class="plabel">Signature — 35%</div>
+          <div class="euro-wrap" style="max-width:120px; margin-top:3px;" onclick="event.stopPropagation()">
+            <input type="number" inputmode="decimal" id="mSignature" class="pdate" style="width:100%;" oninput="onPaiementMontantChange('signature')">
+            <span class="euro-suffix" style="right:8px; font-size:.75rem;">€</span>
+          </div>
+        </div>
+        <input type="date" id="dSignature" class="pdate" onclick="event.stopPropagation()" onchange="onPaiementDateChange('signature')">
+        <button type="button" id="btnLockSignature" onclick="event.stopPropagation(); toggleLockPaiement('signature')" style="background:var(--lock-on); border:none; border-radius:6px; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:.78rem; padding:0; cursor:pointer; flex-shrink:0;">🔒</button>
+      </div>
+      <div class="paiement-row" id="rowPermis" onclick="togglePaiement('permis')">
+        <input type="checkbox" id="pPermis" onclick="event.stopPropagation(); togglePaiement('permis')">
+        <div style="flex:1;"><div class="plabel">Dépôt de permis — 35%</div>
+          <div class="euro-wrap" style="max-width:120px; margin-top:3px;" onclick="event.stopPropagation()">
+            <input type="number" inputmode="decimal" id="mPermis" class="pdate" style="width:100%;" oninput="onPaiementMontantChange('permis')">
+            <span class="euro-suffix" style="right:8px; font-size:.75rem;">€</span>
+          </div>
+        </div>
+        <input type="date" id="dPermis" class="pdate" onclick="event.stopPropagation()" onchange="onPaiementDateChange('permis')">
+        <button type="button" id="btnLockPermis" onclick="event.stopPropagation(); toggleLockPaiement('permis')" style="background:var(--lock-on); border:none; border-radius:6px; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:.78rem; padding:0; cursor:pointer; flex-shrink:0;">🔒</button>
+      </div>
+      <div class="paiement-row" id="rowFeuVert" onclick="togglePaiement('feuvert')">
+        <input type="checkbox" id="pFeuVert" onclick="event.stopPropagation(); togglePaiement('feuvert')">
+        <div style="flex:1;"><div class="plabel">Feu vert — 30%</div>
+          <div class="euro-wrap" style="max-width:120px; margin-top:3px;" onclick="event.stopPropagation()">
+            <input type="number" inputmode="decimal" id="mFeuVert" class="pdate" style="width:100%;" oninput="onPaiementMontantChange('feuvert')">
+            <span class="euro-suffix" style="right:8px; font-size:.75rem;">€</span>
+          </div>
+        </div>
+        <input type="date" id="dFeuVert" class="pdate" onclick="event.stopPropagation()" onchange="onPaiementDateChange('feuvert')">
+        <button type="button" id="btnLockFeuVert" onclick="event.stopPropagation(); toggleLockPaiement('feuvert')" style="background:var(--lock-on); border:none; border-radius:6px; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:.78rem; padding:0; cursor:pointer; flex-shrink:0;">🔒</button>
+      </div>
+      <div class="ptotal" id="pTotalOut"></div>
+      <button type="button" class="btn-primary" id="btnDossierTermine" style="display:none; width:100%; margin-top:14px;" onclick="marquerDossierTermine()">✓ Dossier terminé, classé</button>
+      <div id="dossierTermineInfo" style="display:none; margin-top:14px; text-align:center; color:var(--green); font-size:.85rem; font-weight:600;">
+        ✓ Dossier terminé et classé
+        <div><button type="button" class="btn-secondary" style="margin-top:10px; width:100%; font-weight:400;" onclick="reactiverDossier()">↺ Réactiver ce dossier</button></div>
+      </div>
+    </div>
+    <div id="paiementsHint" style="display:none; margin-top:18px; color:var(--dim); font-size:.8rem;">Enregistre d'abord ce client pour activer le suivi des règlements.</div>
+
+    <div id="factureSection" style="display:none; margin-top:22px; padding-top:18px; border-top:1px solid var(--line);">
+      <label style="margin:0 0 10px;">Documents &amp; photos</label>
+      <div id="factureList" style="margin-bottom:12px;"></div>
+      <input type="file" id="fFacturePhoto" accept="image/*" capture="environment" style="display:none" onchange="onFactureFileChange(event)">
+      <input type="file" id="fFactureGalerie" accept="image/*" style="display:none" onchange="onFactureFileChange(event)">
+      <input type="file" id="fFactureFichier" style="display:none" onchange="onFactureFileChange(event)">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn-secondary" style="flex:1; min-width:100px;" onclick="document.getElementById('fFacturePhoto').click()">📷 Prendre une photo</button>
+        <button type="button" class="btn-secondary" style="flex:1; min-width:100px;" onclick="document.getElementById('fFactureGalerie').click()">🖼️ Galerie</button>
+        <button type="button" class="btn-secondary" style="flex:1; min-width:100px;" onclick="document.getElementById('fFactureFichier').click()">📄 Fichier</button>
+      </div>
+    </div>
+
+    <div id="clientSavedMsg" style="display:none; text-align:center; color:var(--green); font-size:.8rem; margin-top:14px;">✓ Modifications enregistrées</div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" style="flex:1" onclick="closeForm()">Fermer</button>
+      <button class="btn-primary" style="flex:1" onclick="saveClient()">Enregistrer</button>
+    </div>
+    <button class="btn-danger" id="delBtn" style="display:none" onclick="askDelete()">Supprimer ce client</button>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay" onclick="if(event.target===this)cancelDelete()">
+  <div class="sheet" style="text-align:center">
+    <h2 style="margin-bottom:8px">Supprimer ce client ?</h2>
+    <p id="confirmText" style="color:var(--dim); font-size:.9rem; margin:0 0 20px;"></p>
+    <div class="sheet-actions">
+      <button class="btn-secondary" style="flex:1" onclick="cancelDelete()">Annuler</button>
+      <button class="btn-danger" style="flex:1; background:var(--red); color:#fff; border-radius:9px; padding:12px;" onclick="confirmDelete()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="docConfirmOverlay" onclick="if(event.target===this)cancelDocDelete()">
+  <div class="sheet" style="text-align:center">
+    <h2 style="margin-bottom:8px">Supprimer ce document ?</h2>
+    <p style="color:var(--dim); font-size:.9rem; margin:0 0 20px;">Cette action est irréversible.</p>
+    <div class="sheet-actions">
+      <button class="btn-secondary" style="flex:1" onclick="cancelDocDelete()">Annuler</button>
+      <button class="btn-danger" style="flex:1; background:var(--red); color:#fff; border-radius:9px; padding:12px;" onclick="confirmDocDelete()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="docPreviewOverlay" onclick="if(event.target===this)closeDocPreview()">
+  <div class="sheet" style="max-height:85vh; overflow-y:auto;">
+    <h2 id="docPreviewTitle" style="margin-bottom:14px; font-size:1rem; word-break:break-word;"></h2>
+    <div id="docPreviewBody" style="text-align:center;"></div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" style="flex:1" onclick="closeDocPreview()">Fermer</button>
+      <button type="button" id="docDownloadLink" class="btn-primary" style="flex:1; text-align:center;" onclick="telechargerDocumentCourant()">Télécharger</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="docRenameOverlay" onclick="if(event.target===this)closeDocRename()">
+  <div class="sheet">
+    <h2 style="margin-bottom:8px">Renommer le document</h2>
+    <input id="docRenameInput" placeholder="Nom du document">
+    <div class="sheet-actions">
+      <button class="btn-secondary" style="flex:1" onclick="closeDocRename()">Annuler</button>
+      <button class="btn-primary" style="flex:1" onclick="confirmDocRename()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="backupOverlay" onclick="if(event.target===this)closeBackup()">
+  <div class="sheet">
+    <h2>Sauvegarde &amp; transfert</h2>
+    <p style="color:var(--dim); font-size:.85rem; margin-top:0;">Pour déplacer tes clients vers un autre navigateur ou appareil : copie le code ci-dessous, ouvre l'app à l'autre endroit, colle-le dans "Importer" en bas, puis appuie sur Importer.</p>
+    <label>Exporter mes données</label>
+    <textarea id="exportBox" readonly style="width:100%; height:80px; padding:11px 13px; background:var(--surface2); border:1px solid var(--line); border-radius:9px; color:var(--text); font-size:.75rem; font-family:monospace;"></textarea>
+    <div class="sheet-actions" style="margin-top:10px;">
+      <button class="btn-primary" style="flex:1" onclick="copyExport()">Copier</button>
+    </div>
+    <label style="margin-top:24px;">Importer des données (remplace tout)</label>
+    <textarea id="importBox" placeholder="Colle ici le code copié depuis l'autre appareil" style="width:100%; height:80px; padding:11px 13px; background:var(--surface2); border:1px solid var(--line); border-radius:9px; color:var(--text); font-size:.75rem; font-family:monospace;"></textarea>
+    <div class="sheet-actions">
+      <button class="btn-secondary" style="flex:1" onclick="closeBackup()">Fermer</button>
+      <button class="btn-primary" style="flex:1" onclick="doImport()">Importer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const CATS = {
-  pass:  {label:'Mots de passe', icon:'🔑', fields:[['name','Site ou application',0],['user','Identifiant / e-mail',0],['pwd','Mot de passe',1],['note','Note',0,1]]},
-  bank:  {label:'Banque',        icon:'🏦', fields:[['name','Banque / compte',0],['holder','Titulaire',0],['iban','IBAN',1],['num','N° de compte',1],['code','Code ou identifiant',1],['note','Note',0,1]]},
-  wifi:  {label:'Wi-Fi',         icon:'📶', fields:[['name','Lieu / nom du réseau',0],['pwd','Clé Wi-Fi',1],['note','Note',0,1]]},
-  other: {label:'Autres',        icon:'📝', fields:[['name','Titre',0],['text','Contenu',1,1]]}
-};
-const LS = 'coffre_v1';
-const $ = s => document.querySelector(s);
-const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const enc = new TextEncoder(), dec = new TextDecoder();
-const b64 = buf => { let s=''; const u=new Uint8Array(buf); for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s); };
-const unb64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+const KEY='facture_clients_v1';
+let clients = [];
+let dbDoc = null;
+let filter = 'encours';
 
-let db=null, uid=null, key=null, salt=null, record=null;
-let items=[], filter='all', q='', openId=null, revealed=new Set();
-let lockTimer=null, hiddenAt=0, pendingRestore=null;
-let iters=1000000, fails=0, keepExp=0, keepT=null;
-function kvOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open('coffre_keep',1); r.onupgradeneeded=()=>r.result.createObjectStore('k'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
-async function kvGet(k){ const d=await kvOpen(); return new Promise((res,rej)=>{ const q=d.transaction('k').objectStore('k').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
-async function kvSet(k,v){ const d=await kvOpen(); return new Promise((res,rej)=>{ const t=d.transaction('k','readwrite'); t.objectStore('k').put(v,k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
-async function kvDel(k){ try{ const d=await kvOpen(); await new Promise((res)=>{ const t=d.transaction('k','readwrite'); t.objectStore('k').delete(k); t.oncomplete=()=>res(); t.onerror=()=>res(); }); }catch(e){} }
-function fmtExp(t){ return new Date(t).toLocaleString('fr-FR',{weekday:'long',hour:'2-digit',minute:'2-digit'}); }
-async function setKeep(on){
-  clearTimeout(keepT);
-  if(on){
-    const exp = keepExp || (Date.now()+24*3600*1000);
-    await kvSet('keep', {key, exp});
-    keepExp = exp;
-    clearTimeout(lockTimer);
-    keepT = setTimeout(lock, Math.max(1000, exp-Date.now()));
-  } else {
-    await kvDel('keep'); keepExp = 0; resetTimer();
-  }
-  renderKeep();
+const SEED = [
+  {id:'seed1', nom:'VIGILE', ged:'50015', date:'2026-09-19', statut:'encours', prix:128700, remise:0},
+  {id:'seed2', nom:'SCHECK', ged:'50212', date:'2026-09-22', statut:'encours', prix:94500, remise:0}
+];
+function waitForClaudeBridge(timeoutMs){
+  return new Promise(resolve=>{
+    const start = Date.now();
+    (function check(){
+      if(window.claude && window.claude.use){ resolve(true); return; }
+      if(Date.now() - start > timeoutMs){ resolve(false); return; }
+      setTimeout(check, 200);
+    })();
+  });
 }
-async function toggleKeep(){
+
+async function initStorage(){
   try{
-    if(keepExp){ await setKeep(false); toast('Le code sera redemandé'); }
-    else { await setKeep(true); toast('Déverrouillé pendant 24 h'); }
-  }catch(e){ keepExp=0; renderKeep(); toast('Impossible sur cet appareil'); }
-}
-function renderKeep(){
-  const el=$('#keepRow'); if(!el) return;
-  el.innerHTML = `<div><b>Rester déverrouillé 24 h</b><span>${keepExp ? 'Actif jusqu\'à '+esc(fmtExp(keepExp))+'. Le code n\'est pas demandé. Quiconque a ton appareil peut ouvrir le coffre.' : 'Désactivé : le code est demandé après 2 minutes d\'inactivité.'}</span></div><div class="sw ${keepExp?'on':''}"><i></i></div>`;
-}
-const normCode = v => String(v||'').replace(/[\s-]/g,'');
-let strongFlag=false, lkT=null;
-let dkey=null, fkB64='', lastFk=null;
-function codeProblem(v){
-  v=normCode(v);
-  if(/^\d+$/.test(v)){ if(v.length<12) return 'Avec des chiffres seulement, il en faut au moins 12.'; }
-  else {
-    const types=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(v)).length;
-    if(v.length<10 || (types<2 && v.length<16)) return 'Il faut au moins 10 caractères, avec des lettres ET des chiffres.';
-  }
-  if(new Set(v).size<5) return 'Ce code est trop simple : utilise des caractères variés.';
-  return '';
-}
-function codeHint(v){
-  const el=$('#hint'); if(!el) return;
-  if(!v){ el.textContent=''; return; }
-  const p=codeProblem(v);
-  el.style.color = p ? 'var(--red)' : 'var(--green)';
-  el.textContent = p || '✓ Code solide';
-}
-function genCode(){
-  const a=crypto.getRandomValues(new Uint32Array(12)); let d='';
-  for(let i=0;i<12;i++) d+=String(a[i]%10);
-  const g=d.slice(0,4)+' '+d.slice(4,8)+' '+d.slice(8,12);
-  ['p1','p2','n1','n2'].forEach(id=>{ const e=$('#'+id); if(e){ e.type='text'; e.value=g; } });
-  codeHint(g);
-  const m=$('#genmsg'); if(m) m.textContent='Note ce code sur papier MAINTENANT, avant de continuer.';
-}
-function lkGet(){ try{ return JSON.parse(localStorage.getItem('coffre_lk')||'{}'); }catch(e){ return {}; } }
-function lkSet(o){ try{ localStorage.setItem('coffre_lk', JSON.stringify(o)); }catch(e){} }
-function fmtWait(n){ return n>=60 ? Math.ceil(n/60)+' min' : n+' s'; }
-function applyLockout(){
-  const b=$('#go'); if(!b) return;
-  const left=Math.ceil(((lkGet().until||0)-Date.now())/1000);
-  if(left>0){ b.disabled=true; b.dataset.locked='1'; b.textContent='Patiente '+fmtWait(left); clearTimeout(lkT); lkT=setTimeout(applyLockout,1000); }
-  else if(b.dataset.locked){ b.disabled=false; b.textContent='Ouvrir'; setErr(''); delete b.dataset.locked; }
-}
-
-/* ---------- Chiffrement (dans ton navigateur uniquement) ---------- */
-async function deriveKey(pw, s, it){
-  const km = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2', salt:s, iterations:(it||310000), hash:'SHA-256'}, km, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
-}
-async function encryptRecord(){
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify({items, fk:fkB64})));
-  return {v:1, s:(strongFlag?1:0), ts:Date.now(), it:iters, salt:b64(salt), iv:b64(iv), data:b64(ct)};
-}
-async function decryptRecord(rec, k){
-  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(rec.iv)}, k, unb64(rec.data));
-  const p = JSON.parse(dec.decode(pt));
-  if(Array.isArray(p)){ lastFk=null; return p; }
-  lastFk = p.fk || null; return p.items || [];
-}
-async function initDataKey(){
-  let migrate=false;
-  if(lastFk){ fkB64=lastFk; } else { fkB64=b64(crypto.getRandomValues(new Uint8Array(32))); migrate=true; }
-  dkey = await crypto.subtle.importKey('raw', unb64(fkB64), 'AES-GCM', false, ['encrypt','decrypt']);
-  if(migrate){
-    for(const it of items){
-      for(const id of filesOfItem(it)){
-        try{
-          const r=await fGet(id); if(!r||r.k) continue;
-          const buf=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.iv}, key, r.ct);
-          const e=await encBuf(buf); await fPut(id,{iv:e.iv,ct:e.ct,k:1});
-        }catch(e){}
+    const bridgeReady = /github\.io$/.test(location.hostname) ? false : await waitForClaudeBridge(10000);
+    if(bridgeReady){
+      const db = await window.claude.use("db");
+      const user = await window.claude.use("user");
+      if(db && user){
+        const uid = await user.id();
+        if(uid){
+          dbDoc = db.doc(`data/users/${uid}/app/clients`);
+          const snap = await dbDoc.get();
+          const cloud = (snap.exists && snap.data().list) || [];
+          const local = JSON.parse(localStorage.getItem(KEY) || '[]');
+          if(cloud.length===0 && local.length>0){
+            clients = local;
+          } else if(cloud.length===0 && local.length===0){
+            clients = SEED;
+          } else {
+            clients = cloud;
+          }
+          await dbDoc.set({list: clients});
+          save();
+          render();
+          updateHistoryButtons();
+          return;
+        }
       }
     }
-    try{ await save(true); }catch(e){}
+  }catch(e){}
+  const local = JSON.parse(localStorage.getItem(KEY) || '[]');
+  clients = local.length>0 ? local : SEED;
+  save();
+  render();
+  updateHistoryButtons();
+}
+
+let appHistory = [];
+let historyIndex = -1;
+let restoringHistory = false;
+
+function recordHistory(){
+  if(restoringHistory) return;
+  const snap = JSON.stringify(clients);
+  if(appHistory.length && appHistory[historyIndex] === snap) return;
+  appHistory = appHistory.slice(0, historyIndex+1);
+  appHistory.push(snap);
+  historyIndex = appHistory.length - 1;
+  if(appHistory.length > 60){ appHistory.shift(); historyIndex--; }
+  updateHistoryButtons();
+}
+function updateHistoryButtons(){
+  const u = document.getElementById('btnUndo');
+  const r = document.getElementById('btnRedo');
+  if(u) u.disabled = historyIndex <= 0;
+  if(r) r.disabled = historyIndex >= appHistory.length - 1;
+}
+function afterHistoryRestore(){
+  render();
+  const id = document.getElementById('editId').value;
+  if(id){
+    const c = clients.find(x=>x.id===id);
+    if(c){ openForm(id); } else { closeForm(); }
   }
+  updateHistoryButtons();
+}
+function undoAction(){
+  if(historyIndex <= 0) return;
+  historyIndex--;
+  restoringHistory = true;
+  clients = JSON.parse(appHistory[historyIndex]);
+  localStorage.setItem(KEY, JSON.stringify(clients));
+  if(dbDoc){ dbDoc.set({list: clients}).catch(()=>{}); }
+  restoringHistory = false;
+  afterHistoryRestore();
+}
+function redoAction(){
+  if(historyIndex >= appHistory.length - 1) return;
+  historyIndex++;
+  restoringHistory = true;
+  clients = JSON.parse(appHistory[historyIndex]);
+  localStorage.setItem(KEY, JSON.stringify(clients));
+  if(dbDoc){ dbDoc.set({list: clients}).catch(()=>{}); }
+  restoringHistory = false;
+  afterHistoryRestore();
 }
 
-/* ---------- Stockage ---------- */
-async function initStore(){
-  try{ db = await claude.use('db'); }catch(e){ db=null; }
-  try{ const u = await claude.use('user'); if(u) uid = await u.id(); }catch(e){ uid=null; }
+function save(){
+  localStorage.setItem(KEY, JSON.stringify(clients));
+  if(dbDoc){ dbDoc.set({list: clients}).catch(()=>{}); }
+  recordHistory();
 }
-function docRef(){ return (db && uid) ? db.doc('data/users/'+uid+'/vault') : null; }
-async function loadRecord(){
-  let cloud=null, loc=null;
-  const r=docRef();
-  if(r){ try{ const sn = await r.get(); if(sn.exists) cloud=sn.data(); }catch(e){} }
-  try{ const l=localStorage.getItem(LS); if(l) loc=JSON.parse(l); }catch(e){}
-  if(cloud && loc) return ((loc.ts||0) > (cloud.ts||0)) ? loc : cloud;
-  return cloud || loc;
-}
-async function persist(rec){
-  let cloud=false, local=false;
-  const r = docRef();
-  if(r){ try{ await r.set(rec); cloud=true; }catch(e){} }
-  try{ localStorage.setItem(LS, JSON.stringify(rec)); local=true; }catch(e){}
-  return {cloud, local};
-}
-async function save(silent){
-  const rec = await encryptRecord();
-  record = rec;
-  const res = await persist(rec);
-  if(res.cloud){ if(!silent) toast('✓ Enregistré'); }
-  else if(res.local) toast(typeof claude==='undefined' ? '✓ Enregistré' : 'Enregistré sur cet appareil seulement');
-  else toast('⚠️ Impossible d\'enregistrer');
+function euro(n){ return Math.round(n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0,minimumFractionDigits:0}); }
+
+const FIELD_COULEURS = [
+  {value:'', hex:'transparent', label:'Aucune'},
+  {value:'#ef4444', hex:'#ef4444', label:'Rouge'},
+  {value:'#f97316', hex:'#f97316', label:'Orange'},
+  {value:'#eab308', hex:'#eab308', label:'Jaune'},
+  {value:'#22c55e', hex:'#22c55e', label:'Vert'},
+  {value:'#3b82f6', hex:'#3b82f6', label:'Bleu'},
+  {value:'#a855f7', hex:'#a855f7', label:'Violet'},
+  {value:'#ec4899', hex:'#ec4899', label:'Rose'},
+  {value:'#6b7280', hex:'#6b7280', label:'Gris'}
+];
+const FIELD_WRAP_IDS = { nom:'wrapNom', ged:'wrapGed', date:'wrapDate', statut:'wrapStatut', prix:'wrapPrix', commissionPct:'wrapCommissionPct', coCommission:'wrapCoCommission', remise:'wrapRemise' };
+
+function hexToRgba(hex, alpha){
+  if(!hex) return 'transparent';
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/* ---------- Petits outils ---------- */
-let toastT;
-function toast(t){
-  const el=$('#toast'); el.innerHTML='<div class="toast">'+esc(t)+'</div>';
-  clearTimeout(toastT); toastT=setTimeout(()=>{el.innerHTML='';}, 2600);
+let fieldColorTarget = null;
+function openFieldColorPicker(field, el){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  fieldColorTarget = field;
+  const pop = document.getElementById('fieldColorPopover');
+  pop.innerHTML = FIELD_COULEURS.map(c => `<div class="field-color-swatch" style="background:${c.hex}; border-color:${c.value ? c.hex : 'var(--line)'};" onclick="event.stopPropagation(); pickFieldColor('${c.value}')" title="${c.label}"></div>`).join('');
+  const rect = el.getBoundingClientRect();
+  const popWidth = 172;
+  let left = rect.left;
+  if(left + popWidth > window.innerWidth - 8) left = window.innerWidth - popWidth - 8;
+  if(left < 8) left = 8;
+  pop.style.left = left + 'px';
+  pop.style.top = (rect.bottom + 6) + 'px';
+  pop.classList.add('open');
 }
-function openModal(html){ $('#modal').innerHTML='<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet">'+html+'</div></div>'; }
-function closeModal(){ $('#modal').innerHTML=''; }
-function setErr(t){ const e=$('#err'); if(e) e.textContent=t||''; }
-function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-function genPassword(){
-  const set='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*?';
-  const a=crypto.getRandomValues(new Uint32Array(16)); let s='';
-  for(let i=0;i<16;i++) s+=set[a[i]%set.length];
-  return s;
-}
-async function copyText(t, keep){
-  try{ await navigator.clipboard.writeText(t); }
-  catch(e){
-    const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(x){} ta.remove();
+function pickFieldColor(value){
+  const id = document.getElementById('editId').value;
+  const c = clients.find(x=>x.id===id);
+  if(c && fieldColorTarget){
+    c.champCouleurs = c.champCouleurs || {};
+    c.champCouleurs[fieldColorTarget] = value;
+    save();
+    applyFieldColors(c);
   }
-  toast(keep ? '✓ Lien copié' : 'Copié (effacé du presse-papiers dans 30 s)');
-  if(!keep) setTimeout(()=>{ try{navigator.clipboard.writeText(' ');}catch(e){} }, 30000);
+  closeFieldColorPicker();
 }
-function extractLinks(t){
-  const m=(t||'').match(/https?:\/\/[^\s<>"']+/g)||[]; const out=[];
-  m.forEach(u=>{ u=u.replace(/[.,;:!?)\]]+$/,''); if(u && out.indexOf(u)<0) out.push(u); });
-  return out;
+function closeFieldColorPicker(){
+  const pop = document.getElementById('fieldColorPopover');
+  if(pop) pop.classList.remove('open');
+  fieldColorTarget = null;
 }
-function linksHtml(t){
-  const L=extractLinks(t); if(!L.length) return '';
-  return '<div class="lnks">'+L.map(u=>`<div class="lnk"><span class="lu">${esc(u)}</span><button type="button" data-u="${esc(u)}" onclick="copyText(this.dataset.u,true)">📋 Copier</button><button type="button" data-u="${esc(u)}" onclick="openLink(this.dataset.u)">↗ Ouvrir</button></div>`).join('')+'</div>';
-}
-function openLink(u){ const w=window.open(u,'_blank','noopener'); if(!w){ location.href=u; } }
-
-/* ---------- Verrouillage automatique ---------- */
-function resetTimer(){
-  clearTimeout(lockTimer);
-  if(key && !keepExp) lockTimer=setTimeout(lock, 120000);
-}
-['pointerdown','keydown','touchstart','scroll'].forEach(ev=>document.addEventListener(ev, resetTimer, {passive:true}));
-document.addEventListener('visibilitychange', ()=>{
-  if(document.hidden){ hiddenAt=Date.now(); }
-  else if(key && !keepExp && hiddenAt && Date.now()-hiddenAt>60000){ lock(); }
+document.addEventListener('click', function(e){
+  const pop = document.getElementById('fieldColorPopover');
+  if(pop && pop.classList.contains('open') && !pop.contains(e.target) && !e.target.classList.contains('field-color-dot')){
+    closeFieldColorPicker();
+  }
 });
-async function lock(){
-  if(key){ try{ clearTimeout(edT); collectOpenInline(); items.forEach(i=>{i.locked=true;}); await save(true); }catch(e){} }
-  kvDel('keep'); keepExp=0; clearTimeout(keepT);
-  urlCache.forEach(u=>{ try{URL.revokeObjectURL(u);}catch(e){} }); urlCache.clear();
-  dkey=null; fkB64=''; lastFk=null;
-  key=null; items=[]; openId=null; revealed=new Set(); q=''; filter='all';
-  clearTimeout(lockTimer); closeModal();
-  renderLock();
+function getContrastText(hex){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  const yiq = (r*299 + g*587 + b*114) / 1000;
+  return yiq >= 145 ? '#1a1508' : '#f3f1ec';
 }
-
-/* ---------- Écrans ---------- */
-function renderSetup(){
-  $('#app').innerHTML = `<div class="center">
-    <div class="big">🔐</div><h1>Ton coffre</h1>
-    <p>Choisis un <b>code secret solide</b> : 12 chiffres, ou 10 caractères avec lettres et chiffres. C'est le seul que tu devras retenir.</p>
-    <div class="warn">⚠️ Si tu l'oublies, personne ne peut le retrouver, pas même moi. Note-le sur papier et range-le chez toi.</div>
-    <label>Code secret</label>
-    <input type="password" id="p1" autocomplete="new-password" autocapitalize="none" oninput="codeHint(this.value)">
-    <div id="hint" style="text-align:left; font-size:.84rem; margin-top:6px; min-height:1.2em"></div>
-    <label>Retape-le pour confirmer</label>
-    <input type="password" id="p2" autocomplete="new-password" autocapitalize="none">
-    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code solide (12 chiffres)</button>
-    <div id="genmsg" style="color:var(--brass); font-size:.84rem; margin-top:8px; text-align:left"></div>
-    <div class="err" id="err"></div>
-    <button class="primary" id="go" onclick="doSetup()">Créer mon coffre</button>
-    <button class="gen" type="button" style="margin-top:18px" onclick="document.getElementById('restFile0').click()">♻️ J'ai déjà une sauvegarde : la restaurer</button>
-    <input type="file" id="restFile0" style="display:none" onchange="onRestoreFile(event)">
-  </div>`;
+function toggleFieldLock(key){
+  fieldLocks[key] = !fieldLocks[key];
+  applyFieldLockState();
 }
-function renderLock(){
-  $('#app').innerHTML = `<div class="center">
-    <div class="big">🔒</div><h1>Coffre verrouillé</h1>
-    <p>Entre ton code secret.</p>
-    <input type="password" id="pw" autocomplete="current-password" autocapitalize="none" onkeydown="if(event.key==='Enter')doUnlock()">
-    <div class="err" id="err"></div>
-    <button class="primary" id="go" onclick="doUnlock()">Ouvrir</button>
-  </div>`;
-  applyLockout();
-}
-async function doSetup(){
-  const p1=normCode($('#p1').value), p2=normCode($('#p2').value);
-  const pr=codeProblem(p1); if(pr) return setErr(pr);
-  if(p1!==p2) return setErr('Les deux codes ne sont pas identiques.');
-  const b=$('#go'); b.disabled=true; b.textContent='Création…';
-  salt=crypto.getRandomValues(new Uint8Array(16)); iters=1000000; strongFlag=true;
-  key=await deriveKey(p1, salt, iters); items=[]; lastFk=null; await initDataKey();
-  await save(); resetTimer(); renderMain();
-}
-async function doUnlock(){
-  const p=normCode($('#pw').value); if(!p) return;
-  const lkc=lkGet(); if((lkc.until||0)>Date.now()){ applyLockout(); return; }
-  const b=$('#go'); b.disabled=true; b.textContent='Ouverture…';
-  try{
-    const s=unb64(record.salt); const it=record.it||310000;
-    const k=await deriveKey(p, s, it);
-    items=await decryptRecord(record, k); items.forEach(i=>{i.locked=true;}); key=k; salt=s; iters=it; fails=0;
-    strongFlag=!!record.s; lkSet({});
-    try{ await initDataKey(); }catch(e){}
-    resetTimer(); renderMain();
-  }catch(e){
-    const n=(lkGet().n||0)+1; let until=0;
-    if(n>=3) until=Date.now()+Math.min(15*Math.pow(2,n-3),900)*1000;
-    lkSet({n, until});
-    b.disabled=false; b.textContent='Ouvrir'; setErr('Code incorrect.');
-    const pw=$('#pw'); if(pw) pw.value='';
-    if(until) applyLockout();
-  }
-}
-
-function renderMain(){
-  $('#app').innerHTML = `<div class="wrap" id="homewrap">
-    <header><h1>Coffre</h1><div class="hbtn"><button onclick="openSettings()">⚙️</button><button onclick="lock()">🔒 Verrouiller</button></div></header>
-    <div id="warnRow"></div>
-    <div class="keep" id="keepRow" onclick="toggleKeep()"></div>
-    <input type="search" id="q" placeholder="Rechercher…" value="${esc(q)}" oninput="q=this.value; renderList()">
-    <div id="list"></div>
-  </div>
-  <div class="wrap" id="detailwrap" style="display:none"></div>
-  <button class="fab" id="fab" onclick="editItem(null)">+ Ajouter</button>`;
-  renderKeep(); renderWarn(); renderList();
-}
-function bkReminder(){
-  if(!items.length) return '';
-  const hasFiles=items.some(it=>filesOfItem(it).length>0);
-  const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
-  const last = hasFiles ? f : Math.max(f,l);
-  if(last && (Date.now()-last) < 30*24*3600*1000) return '';
-  return `<div class="warn" style="margin-top:12px">💾 Pense à faire une sauvegarde (avec tes photos) : tout est gardé sur ce téléphone seulement.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
-}
-function renderWarn(){
-  const el=$('#warnRow'); if(!el) return;
-  el.innerHTML = bkReminder() + (strongFlag ? '' : `<div class="warn" style="margin-top:12px">⚠️ Ton code actuel est trop court pour protéger des informations confidentielles.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="changePwForm()">Renforcer mon code maintenant</button></div>`);
-}
-function renderChips(){
-  const all=[['all','Tout']].concat(Object.keys(CATS).map(k=>[k, CATS[k].icon+' '+CATS[k].label]));
-  $('#chips').innerHTML = all.map(([k,l])=>`<button class="chip ${filter===k?'on':''}" onclick="filter='${k}'; renderChips(); renderList()">${esc(l)}</button>`).join('');
-}
-function renderList(){
-  collectOpenInline();
-  const op = openId ? items.find(x=>x.id===openId) : null;
-  if(openId && !op) openId=null;
-  const hw=$('#homewrap'), dw=$('#detailwrap'), fb=$('#fab');
-  if(op){
-    if(splitFiles(op)){ save(true).catch(()=>{}); }
-    hw.style.display='none'; fb.style.display='none'; dw.style.display='block';
-    dw.innerHTML=detailHtml(op); initInline(); loadImages();
-    return;
-  }
-  dw.style.display='none'; dw.innerHTML=''; hw.style.display=''; fb.style.display='';
-  const term=q.trim().toLowerCase();
-  const list=items.filter(it=>(filter==='all'||it.cat===filter) && (!term || Object.values(it.f).some(v=>String(v).toLowerCase().includes(term)) && true))
-    .sort((a,b)=>(a.f.name||'').localeCompare(b.f.name||'','fr'));
-  // la recherche ne regarde que les champs non secrets
-  const safe=list.filter(it=>{
-    if(!term) return true;
-    return CATS[it.cat].fields.some(([k,,sec])=>!sec && String(it.f[k]||'').toLowerCase().includes(term));
+function applyFieldLockState(){
+  Object.keys(FIELD_WRAP_IDS).forEach(key=>{
+    const el = document.getElementById(FIELD_WRAP_IDS[key]);
+    if(!el) return;
+    const btn = el.querySelector('.field-lock-btn');
+    const locked = fieldLocks[key];
+    el.querySelectorAll('input,select').forEach(i=>{ i.style.pointerEvents = locked ? 'none' : ''; });
+    if(btn){
+      btn.textContent = locked ? '🔒' : '🔓';
+      btn.style.background = locked ? 'var(--lock-on)' : 'var(--lock-off)';
+    }
   });
-  if(!safe.length){
-    $('#list').innerHTML = `<div class="empty">${items.length?'Rien ne correspond.':'Ton coffre est vide.<br>Appuie sur <b>+ Ajouter</b> pour noter ton premier mot de passe, numéro de compte ou clé Wi-Fi.'}</div>`;
-    return;
-  }
-  $('#list').innerHTML = safe.map(cardHtml).join('');
 }
-function itemFields(it){
-  const base=CATS[it.cat].fields.slice();
-  if(it.cat==='other'){
-    Object.keys(it.f).filter(k=>/^m\d+$/.test(k)).sort((a,b)=>parseInt(a.slice(1))-parseInt(b.slice(1)))
-      .forEach((k,i)=>base.push([k,'Onglet '+(i+2),1,1]));
-  }
-  return base;
+function applyFieldColors(c){
+  const cc = (c && c.champCouleurs) || {};
+  Object.keys(FIELD_WRAP_IDS).forEach(key=>{
+    const el = document.getElementById(FIELD_WRAP_IDS[key]);
+    if(!el) return;
+    const dot = el.querySelector('.field-color-dot');
+    const label = el.querySelector('label');
+    const hex = cc[key];
+    if(hex){
+      const grad = `linear-gradient(135deg, ${hexToRgba(hex,0.5)}, ${hexToRgba(hex,0.08)})`;
+      el.querySelectorAll('input,select').forEach(i=>{ i.style.color = ''; i.style.background = grad; i.style.borderColor = hexToRgba(hex,0.6); });
+      el.querySelectorAll('.field-suffix,.field-sub').forEach(s=>{ s.style.color = ''; });
+      if(label) label.style.color = '';
+      if(dot){ dot.style.background = grad; dot.style.borderColor = hex; }
+    } else {
+      el.querySelectorAll('input,select').forEach(i=>{ i.style.color = ''; i.style.background = ''; i.style.borderColor = ''; });
+      el.querySelectorAll('.field-suffix,.field-sub').forEach(s=>{ s.style.color = ''; });
+      if(label) label.style.color = '';
+      if(dot){ dot.style.background = 'var(--surface2)'; dot.style.borderColor = 'var(--line)'; }
+    }
+  });
 }
-function itemLocked(it){ return it.locked!==false; }
-const LK_CLOSED='<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.5" stroke="none"/><path class="sh" d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
-const LK_OPEN='<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.5" stroke="none"/><path class="sh" d="M8 10V7a4 4 0 0 1 7.5-2"/></svg>';
 
-/* --- fichiers et photos (chiffrés, gardés sur cet appareil) --- */
-const DL_OK=['gif','png','jpg','jpeg','webp','mp4','webm','txt','json','md','docx','pptx','epub','csv','html','svg','pdf','xlsx','zip'];
-const DL_MIME={'application/pdf':'pdf','image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','text/plain':'txt','text/csv':'csv','application/zip':'zip','application/json':'json','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx'};
-function fOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open('coffre_files',1); r.onupgradeneeded=()=>r.result.createObjectStore('f'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
-async function fPut(id,v){ const d=await fOpen(); return new Promise((res,rej)=>{ const t=d.transaction('f','readwrite'); t.objectStore('f').put(v,id); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
-async function fGet(id){ const d=await fOpen(); return new Promise((res,rej)=>{ const q=d.transaction('f').objectStore('f').get(id); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
-async function fDel(id){ try{ const d=await fOpen(); await new Promise(res=>{ const t=d.transaction('f','readwrite'); t.objectStore('f').delete(id); t.oncomplete=()=>res(); t.onerror=()=>res(); }); }catch(e){} for(const [k,u] of Array.from(urlCache)){ if(k.indexOf(id+'_')===0){ try{URL.revokeObjectURL(u);}catch(e){} urlCache.delete(k); } } }
-const urlCache=new Map();
-async function encBuf(buf){ const iv=crypto.getRandomValues(new Uint8Array(12)); const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},dkey,buf); return {iv,ct}; }
-async function decBuf(rec){ return crypto.subtle.decrypt({name:'AES-GCM',iv:rec.iv}, rec.k?dkey:key, rec.ct); }
-function isImg(m){ return /^image\//.test(m.type||'') || /\.(jpe?g|png|webp|gif|heic)$/i.test(m.name||''); }
-function fmtSize(n){ n=n||0; return n>=1048576 ? (n/1048576).toFixed(1).replace('.',',')+' Mo' : Math.max(1,Math.round(n/1024))+' Ko'; }
-async function rotateBlob(blob,deg){
-  const u=URL.createObjectURL(blob);
-  const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=u; });
-  const sw=img.naturalWidth, sh=img.naturalHeight, swap=(deg%180)!==0;
-  const c=document.createElement('canvas'); c.width=swap?sh:sw; c.height=swap?sw:sh;
-  const g=c.getContext('2d'); g.translate(c.width/2,c.height/2); g.rotate(deg*Math.PI/180); g.drawImage(img,-sw/2,-sh/2);
-  URL.revokeObjectURL(u);
-  return await new Promise(res=>c.toBlob(b=>res(b),'image/jpeg',0.92));
+function setFilter(f){
+  filter = f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.f===f));
+  const isComm = (f==='commission');
+  const cp = document.getElementById('commissionPanel');
+  if(cp) cp.style.display = isComm ? 'block' : 'none';
+  const se = document.getElementById('search'); if(se) se.style.display = isComm ? 'none' : '';
+  const li = document.getElementById('list'); if(li) li.style.display = isComm ? 'none' : '';
+  if(isComm) renderCommissions();
+  render();
 }
-async function fileUrl(m){
-  const rot=(((m.rot||0)%360)+360)%360, ck=m.id+'_'+rot;
-  if(urlCache.has(ck)) return urlCache.get(ck);
-  const rec=await fGet(m.id); if(!rec) return null;
-  const buf=await decBuf(rec);
-  let blob=new Blob([buf],{type:m.type||'image/jpeg'});
-  if(rot) blob=await rotateBlob(blob,rot);
-  const url=URL.createObjectURL(blob); urlCache.set(ck,url); return url;
+
+function render(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let items = clients.filter(c => filter==='tous' || c.statut===filter);
+  if(q) items = items.filter(c => c.nom.toLowerCase().includes(q) || String(c.ged).includes(q));
+  items.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+
+  const list = document.getElementById('list');
+  if(items.length===0){
+    list.innerHTML = '<div class="empty">Aucun client ici pour l\'instant.</div>';
+  } else {
+    list.innerHTML = items.map(c => {
+      const badgeClass = c.statut==='encours'?'encours':(c.statut==='termine'?'termine':'annule');
+      const badgeLabel = c.statut==='encours'?'En cours':(c.statut==='termine'?'Terminé':'Annulé');
+      return `<div class="client" onclick="openForm('${c.id}')" style="${c.couleur ? `background:linear-gradient(135deg, ${hexToRgba(c.couleur,0.16)}, var(--surface) 55%);` : ''}">
+        ${c.couleur ? `<span class="client-tab" style="background:linear-gradient(180deg, ${c.couleur}, ${hexToRgba(c.couleur,0.55)}); color:${hexToRgba(c.couleur,0.55)};"></span>` : ''}
+        <div class="top">
+          <div>
+            <div class="name">${escapeHtml(c.nom)}</div>
+            <div class="meta">GED : ${escapeHtml(c.ged||'—')} • ${c.date ? formatDate(c.date) : 'Date non renseignée'}</div>
+          </div>
+          <div class="amount">${euro(c.prix)}</div>
+        </div>
+        <span class="badge ${badgeClass}">${badgeLabel}</span>${c.coCommission ? ` <span style="color:var(--dim); font-size:.72rem;">• ${Math.round(reglePct(c))}% réglé • Reste ${euro(c.coCommission - montantEncaisse(c))} sur ${euro(c.coCommission)}</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  const actifs = clients.filter(c=>c.statut==='encours');
+  document.getElementById('dashCours').textContent = euro(actifs.reduce((s,c)=>s+(Number(c.coCommission)||0),0));
+  document.getElementById('dashTermine').textContent = euro(clients.filter(c=>c.statut!=='annule').reduce((s,c)=>s+montantEncaisse(c),0));
+  document.getElementById('dashReste').textContent = euro(clients.filter(c=>c.statut!=='annule').reduce((s,c)=>s+Math.max(0,(Number(c.coCommission)||0)-montantEncaisse(c)),0));
+  document.getElementById('dashCAMaison').textContent = euro(clients.filter(c=>c.statut!=='annule').reduce((s,c)=>s+(Number(c.prix)||0),0));
+  document.getElementById('dashCount').textContent = actifs.length;
+  document.getElementById('dashTermines').textContent = clients.filter(c=>c.statut==='termine').length;
+  document.getElementById('dashAnnules').textContent = clients.filter(c=>c.statut==='annule').length;
 }
-async function loadImages(){
-  const imgs=Array.from(document.querySelectorAll('#detailwrap img[data-fid]'));
-  await Promise.all(imgs.map(async im=>{
-    const bad=txt=>{ const sp=document.createElement('span'); sp.className='fbad'; sp.innerHTML='⚠️<small>'+txt+'</small>'; im.replaceWith(sp); };
-    try{ const u=await fileUrl({id:im.dataset.fid,type:im.dataset.type,rot:parseInt(im.dataset.rot)||0}); if(u) im.src=u; else bad('Absente'); }
-    catch(e){ bad('Illisible'); }
+
+function montantPaiement(c, key){
+  const order = ['signature','permis','feuvert'];
+  const PCT = {signature:0.35, permis:0.35, feuvert:0.30};
+  const manual = c.paiementsManual || {};
+  if(manual[key] !== undefined && manual[key] !== null && manual[key] !== '') return Number(manual[key]);
+  const total = Number(c.coCommission) || 0;
+  const manualKeys = order.filter(k => manual[k] !== undefined && manual[k] !== null && manual[k] !== '');
+  const manualSum = manualKeys.reduce((s,k)=>s+Number(manual[k]),0);
+  const freeKeys = order.filter(k => !manualKeys.includes(k));
+  const weightSum = freeKeys.reduce((s,k)=>s+PCT[k],0);
+  const remainder = total - manualSum;
+  return weightSum ? remainder * PCT[key] / weightSum : 0;
+}
+function montantEncaisse(c){
+  const p = c.paiements || {};
+  return (p.signature?montantPaiement(c,'signature'):0)+(p.permis?montantPaiement(c,'permis'):0)+(p.feuvert?montantPaiement(c,'feuvert'):0);
+}
+function reglePct(c){ const base = Number(c.coCommission)||0; return base ? (montantEncaisse(c)/base*100) : 0; }
+
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function formatDate(iso){ const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+
+function updateCalc(){
+  const prix = parseFloat(document.getElementById('fPrix').value) || 0;
+  const remise = parseFloat(document.getElementById('fRemise').value) || 0;
+  const ttcOut = document.getElementById('prixTTCOut');
+  ttcOut.textContent = prix ? `TTC (TVA 20%) : ${euro(prix * 1.2)}` : '';
+  const id = document.getElementById('editId').value;
+  const pct = document.getElementById('fCommissionPct').value;
+  if(id){
+    const c = clients.find(x=>x.id===id);
+    if(c){
+      let changed = false;
+      const prixChange = (c.prix !== prix);
+      if(c.prix !== prix){ c.prix = prix; changed = true; }
+      if(c.remise !== remise){ c.remise = remise; changed = true; }
+      if(pct !== '' && prixChange){
+        const montant = Math.round(prix * parseFloat(pct) / 100);
+        document.getElementById('fCoCommission').value = montant;
+        if(c.coCommission !== montant){ c.coCommission = montant; changed = true; }
+      }
+      if(changed) save();
+    }
+  }
+  updatePaiements();
+}
+
+function updatePaiements(){
+  const id = document.getElementById('editId').value;
+  const section = document.getElementById('paiementsSection');
+  const hint = document.getElementById('paiementsHint');
+  if(!id){ section.style.display='none'; hint.style.display='block'; return; }
+  hint.style.display='none';
+  section.style.display='block';
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  applyPaiementsLockState();
+  const p = c.paiements || {signature:false, permis:false, feuvert:false};
+  const coField = document.getElementById('fCoCommission');
+  if(document.activeElement !== coField){ coField.value = c.coCommission || ''; }
+  const pctField = document.getElementById('fCommissionPct');
+  if(document.activeElement !== pctField){ pctField.value = (c.commissionPct === null || c.commissionPct === undefined) ? '' : Number(c.commissionPct).toFixed(1); }
+  const mS = montantPaiement(c,'signature'), mP = montantPaiement(c,'permis'), mF = montantPaiement(c,'feuvert');
+  document.getElementById('pSignature').checked = !!p.signature;
+  document.getElementById('pPermis').checked = !!p.permis;
+  document.getElementById('pFeuVert').checked = !!p.feuvert;
+  const dates = c.paiementsDates || {};
+  document.getElementById('dSignature').value = dates.signature || '';
+  document.getElementById('dPermis').value = dates.permis || '';
+  document.getElementById('dFeuVert').value = dates.feuvert || '';
+  const mSField = document.getElementById('mSignature'), mPField = document.getElementById('mPermis'), mFField = document.getElementById('mFeuVert');
+  if(document.activeElement !== mSField) mSField.value = mS ? Math.round(mS) : '';
+  if(document.activeElement !== mPField) mPField.value = mP ? Math.round(mP) : '';
+  if(document.activeElement !== mFField) mFField.value = mF ? Math.round(mF) : '';
+  const base = Number(c.coCommission) || 0;
+  document.getElementById('rowSignature').classList.toggle('paid', !!p.signature);
+  document.getElementById('rowPermis').classList.toggle('paid', !!p.permis);
+  document.getElementById('rowFeuVert').classList.toggle('paid', !!p.feuvert);
+  const encaisse = (p.signature?mS:0)+(p.permis?mP:0)+(p.feuvert?mF:0);
+  document.getElementById('pTotalOut').innerHTML = `Encaissé : ${euro(encaisse)} sur ${euro(base)}<br>Reste à percevoir : ${euro(base - encaisse)}`;
+  const btnTermine = document.getElementById('btnDossierTermine');
+  const infoTermine = document.getElementById('dossierTermineInfo');
+  if(c.statut === 'termine'){
+    btnTermine.style.display = 'none';
+    infoTermine.style.display = 'block';
+  } else if(p.feuvert){
+    btnTermine.style.display = 'block';
+    infoTermine.style.display = 'none';
+  } else {
+    btnTermine.style.display = 'none';
+    infoTermine.style.display = 'none';
+  }
+}
+
+function marquerDossierTermine(){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  c.statut = 'termine';
+  document.getElementById('fStatut').value = 'termine';
+  save();
+  updatePaiements();
+  render();
+}
+
+function reactiverDossier(){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  c.statut = 'encours';
+  document.getElementById('fStatut').value = 'encours';
+  save();
+  updatePaiements();
+  render();
+}
+
+function onCommissionPctChange(){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  const pct = document.getElementById('fCommissionPct').value;
+  c.commissionPct = pct === '' ? null : parseFloat(pct);
+  if(pct !== ''){
+    const prix = parseFloat(document.getElementById('fPrix').value) || 0;
+    const montant = Math.round(prix * parseFloat(pct) / 100);
+    document.getElementById('fCoCommission').value = montant;
+    c.coCommission = montant;
+  }
+  save();
+  updatePaiements();
+}
+
+function onCoCommissionInput(){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  c.coCommission = parseFloat(document.getElementById('fCoCommission').value) || 0;
+  save();
+  updatePaiements();
+}
+
+function onPaiementMontantChange(key){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  if(!c.paiementsManual) c.paiementsManual = {};
+  const elId = {signature:'mSignature', permis:'mPermis', feuvert:'mFeuVert'}[key];
+  const val = document.getElementById(elId).value;
+  if(val === ''){ delete c.paiementsManual[key]; } else { c.paiementsManual[key] = parseFloat(val); }
+  save();
+  updatePaiements();
+  render();
+}
+
+function onPaiementDateChange(key){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  if(!c.paiementsDates) c.paiementsDates = {};
+  const elId = {signature:'dSignature', permis:'dPermis', feuvert:'dFeuVert'}[key];
+  c.paiementsDates[key] = document.getElementById(elId).value;
+  save();
+}
+
+let paiementsLocked = {signature:true, permis:true, feuvert:true};
+let fieldLocks = {nom:true, ged:true, date:true, statut:true, prix:true, commissionPct:true, coCommission:true, remise:true};
+
+function toggleLockPaiement(key){
+  paiementsLocked[key] = !paiementsLocked[key];
+  applyPaiementsLockState();
+}
+function applyPaiementsLockState(){
+  const chkId = {signature:'pSignature', permis:'pPermis', feuvert:'pFeuVert'};
+  const montantId = {signature:'mSignature', permis:'mPermis', feuvert:'mFeuVert'};
+  const dateId = {signature:'dSignature', permis:'dPermis', feuvert:'dFeuVert'};
+  const btnId = {signature:'btnLockSignature', permis:'btnLockPermis', feuvert:'btnLockFeuVert'};
+  const rowId = {signature:'rowSignature', permis:'rowPermis', feuvert:'rowFeuVert'};
+  ['signature','permis','feuvert'].forEach(key=>{
+    const chk = document.getElementById(chkId[key]);
+    const montant = document.getElementById(montantId[key]);
+    const date = document.getElementById(dateId[key]);
+    const btn = document.getElementById(btnId[key]);
+    const row = document.getElementById(rowId[key]);
+    if(paiementsLocked[key]){
+      chk.setAttribute('disabled','disabled');
+      montant.setAttribute('disabled','disabled');
+      date.setAttribute('disabled','disabled');
+      btn.textContent = '🔒'; btn.style.background = 'var(--lock-on)';
+      row.classList.add('locked');
+    } else {
+      chk.removeAttribute('disabled');
+      montant.removeAttribute('disabled');
+      date.removeAttribute('disabled');
+      btn.textContent = '🔓'; btn.style.background = 'var(--lock-off)';
+      row.classList.remove('locked');
+    }
+  });
+}
+
+function togglePaiement(key){
+  if(paiementsLocked[key]) return;
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  if(!c.paiements) c.paiements = {signature:false, permis:false, feuvert:false};
+  c.paiements[key] = !c.paiements[key];
+  save();
+  updatePaiements();
+  render();
+}
+
+const FACT_DB_NAME = 'facture_cpr_files';
+const FACT_STORE = 'factures';
+function openFactureDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(FACT_DB_NAME, 1);
+    req.onupgradeneeded = ()=>{ req.result.createObjectStore(FACT_STORE); };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+function idbSetFacture(id, data){
+  return openFactureDB().then(db=>new Promise((resolve,reject)=>{
+    const tx = db.transaction(FACT_STORE,'readwrite');
+    tx.objectStore(FACT_STORE).put(data, id);
+    tx.oncomplete = ()=>resolve();
+    tx.onerror = ()=>reject(tx.error);
   }));
 }
-function getFiles(b){ try{ return JSON.parse(b.dataset.files||'[]'); }catch(e){ return []; } }
-function setFiles(b,a){ b.dataset.files=JSON.stringify(a); }
-function findMeta(id){
-  for(const it of items){ for(const k of Object.keys(it.f)){ if(k.indexOf('a_')===0 && Array.isArray(it.f[k])){ const m=it.f[k].find(x=>x.id===id); if(m) return m; } } }
-  return null;
+function idbGetFacture(id){
+  return openFactureDB().then(db=>new Promise((resolve,reject)=>{
+    const tx = db.transaction(FACT_STORE,'readonly');
+    const req = tx.objectStore(FACT_STORE).get(id);
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  }));
 }
-function filesOfItem(it){ const out=[]; Object.keys(it.f).forEach(k=>{ if(k.indexOf('a_')===0 && Array.isArray(it.f[k])) it.f[k].forEach(m=>out.push(m.id)); }); return out; }
-function fileRowsEdit(fl){
-  return fl.map(m=>`<div class="frow" data-fid="${m.id}">${isImg(m)?`<img class="fthumb" data-fid="${m.id}" data-type="${esc(m.type)}" data-rot="${m.rot||0}" onclick="viewFile('${m.id}')" alt="">`:'<span class="ficon">📄</span>'}<span class="fname" onclick="viewFile('${m.id}')">${esc(m.name)}<small>${fmtSize(m.size)}</small></span><button type="button" class="ren2" onclick="renameFile(this)">Renommer</button><button type="button" class="xdel2" onclick="askDelFile(this)">Supprimer</button></div>`).join('');
+function idbDeleteFacture(id){
+  return openFactureDB().then(db=>new Promise((resolve,reject)=>{
+    const tx = db.transaction(FACT_STORE,'readwrite');
+    tx.objectStore(FACT_STORE).delete(id);
+    tx.oncomplete = ()=>resolve();
+    tx.onerror = ()=>reject(tx.error);
+  }));
 }
-function filesRo(fl){
-  if(!fl||!fl.length) return '';
-  return '<div class="flro">'+fl.map(m=>`<div class="frow ro">${isImg(m)?`<img class="fthumb" data-fid="${m.id}" data-type="${esc(m.type)}" data-rot="${m.rot||0}" alt="">`:'<span class="ficon">📄</span>'}<span class="fname" style="cursor:default">${esc(m.name)}<small>${fmtSize(m.size)}</small></span></div>`).join('')+'</div>';
-}
-async function onPickFile(inp){
-  const blk=inp.closest('.blk'); const files=Array.from(inp.files||[]); inp.value='';
-  const body=blk.closest('.body');
-  // pièces illisibles de cet onglet : la nouvelle photo les remplace
-  const badIds=Array.from(blk.querySelectorAll('.frow')).filter(r=>r.querySelector('.fbad')).map(r=>r.dataset.fid);
-  if(badIds.length && files.length){
-    setFiles(blk,getFiles(blk).filter(m=>!badIds.includes(m.id))); badIds.forEach(id=>fDel(id));
-    blk.querySelector('.fl').innerHTML=fileRowsEdit(getFiles(blk));
+
+async function updateFactureSection(){
+  const id = document.getElementById('editId').value;
+  const section = document.getElementById('factureSection');
+  if(!id){ section.style.display='none'; return; }
+  section.style.display='block';
+  const listEl = document.getElementById('factureList');
+  let items = [];
+  try{ items = (await idbGetFacture(id)) || []; }catch(e){ items = []; }
+  if(items.length===0){
+    listEl.innerHTML = '<div style="color:var(--dim); font-size:.85rem;">Aucun document ajouté.</div>';
+  } else {
+    listEl.innerHTML = items.map(it => `<div class="doc-item">
+      <span class="doc-name">${escapeHtml(it.name || 'Document')}</span>
+      <span class="doc-actions">
+        <button type="button" onclick="voirFacture('${it.attId}')">Voir</button>
+        <button type="button" onclick="renommerFacture('${it.attId}')">Renommer</button>
+        <button type="button" class="del" onclick="supprimerFacture('${it.attId}')">Supprimer</button>
+      </span>
+    </div>`).join('');
   }
-  for(const file of files){
-    if(file.size>15*1024*1024){ toast('Fichier trop lourd (15 Mo maximum)'); continue; }
-    try{
-      const buf=await file.arrayBuffer(); const e=await encBuf(buf); const id='f'+newId();
-      await fPut(id,{iv:e.iv,ct:e.ct,k:1});
-      let target=blk;
-      if(getFiles(blk).length>0){
-        const box=body.querySelector('.eextras');
-        box.insertAdjacentHTML('beforeend', blockHtml('', '', [], true));
-        target=box.lastElementChild; attachGrow(target.querySelector('textarea'));
-      }
-      const a=getFiles(target); a.push({id,name:file.name||'photo.jpg',type:file.type||'',size:file.size}); setFiles(target,a);
-      target.querySelector('.fl').innerHTML=fileRowsEdit(a);
-      refreshBlock(target);
-    }catch(err){ toast('Impossible d\'ajouter ce fichier'); }
-  }
-  loadImages(); inlineChanged();
 }
-let renId=null;
-function renameFile(btn){
-  const row=btn.closest('.frow'), blk=btn.closest('.blk'); renId=row.dataset.fid;
-  const m=getFiles(blk).find(x=>x.id===renId); if(!m) return;
-  const base=(m.name||'').replace(/\.[^.]+$/,'');
-  openModal(`<h2>Renommer</h2>
-    <label>Nouveau nom</label>
-    <input id="rn_name" type="text" autocomplete="off" value="${esc(base)}" onkeydown="if(event.key==='Enter')doRenameFile()">
-    <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
-    <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="doRenameFile()">Enregistrer</button></div></div>`);
-  setTimeout(()=>{ const e=$('#rn_name'); if(e){ e.focus(); e.select(); } },50);
-}
-function doRenameFile(){
-  const e=$('#rn_name'); let v=(e?e.value:'').trim();
-  if(!v) return setErr('Écris un nom.');
-  const row=document.querySelector('#detailwrap .frow[data-fid="'+renId+'"]'); if(!row){ closeModal(); return; }
-  const blk=row.closest('.blk'); const a=getFiles(blk); const m=a.find(x=>x.id===renId); if(!m){ closeModal(); return; }
-  const ext=(m.name.match(/\.[^.]+$/)||[''])[0];
-  if(ext && v.toLowerCase().endsWith(ext.toLowerCase())) v=v.slice(0,-ext.length).trim();
-  m.name=(v||'fichier')+ext; setFiles(blk,a);
-  const nm=row.querySelector('.fname'); if(nm){ nm.firstChild.nodeValue=m.name; }
-  closeModal(); inlineChanged();
-}
-function askDelFile(btn){
-  const row=btn.closest('.frow'); btn.style.display='none';
-  row.insertAdjacentHTML('beforeend',`<div class="cfm" style="flex-basis:100%; margin-top:8px; padding:12px; border:1px solid #5a2f2b; border-radius:10px;">
-    <div style="margin-bottom:10px">Supprimer ce fichier ?</div>
-    <div class="row2"><button onclick="cancelDelFile(this)">Non, garder</button><button class="danger" onclick="doDelFile(this)">Oui, supprimer</button></div></div>`);
-}
-function cancelDelFile(btn){ const row=btn.closest('.frow'); row.querySelector('.cfm').remove(); row.querySelector('.xdel2').style.display=''; }
-function doDelFile(btn){
-  const row=btn.closest('.frow'), blk=btn.closest('.blk'), id=row.dataset.fid;
-  setFiles(blk,getFiles(blk).filter(m=>m.id!==id)); fDel(id); row.remove();
-  const ta=blk.querySelector('textarea.etext');
-  if(blk.classList.contains('xblk') && ta && !cleanTxt(ta.value) && getFiles(blk).length===0){ blk.remove(); }
-  else { refreshBlock(blk); }
-  inlineChanged();
-}
-function removeBlock(btn){
-  const b=btn.closest('.xblk'); try{ getFiles(b).forEach(m=>fDel(m.id)); }catch(e){}
-  b.remove(); renumber(); inlineChanged();
-}
-function nameForDl(m){
-  let n=(m.name||'fichier').trim()||'fichier'; const e=(n.match(/\.([A-Za-z0-9]+)$/)||[])[1];
-  if(e && DL_OK.includes(e.toLowerCase())) return n;
-  const x=DL_MIME[m.type||'']; return x ? n.replace(/\.[A-Za-z0-9]+$/,'')+'.'+x : null;
-}
-async function saveBlobAs(name, blob){
-  if(typeof claude!=='undefined' && claude && claude.use){
-    const d=await claude.use('downloads'); if(!d) throw new Error('nodl');
-    await d.save({filename:name, data:blob}); return;
-  }
-  const u=URL.createObjectURL(blob); const a=document.createElement('a');
-  a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(u),4000);
-}
-async function downloadFile(id){
-  const m=findMeta(id); if(!m) return;
-  try{
-    const rec=await fGet(id); if(!rec){ toast('Fichier absent de cet appareil'); return; }
-    const buf=await decBuf(rec); const name=nameForDl(m);
-    if(!name){ toast('Ce format ne peut pas être téléchargé ici'); return; }
-    await saveBlobAs(name, new Blob([buf],{type:m.type||'application/octet-stream'}));
-  }catch(e){ if(!(e&&e.code==='declined')) toast('Échec du téléchargement'); }
-}
-async function rotateFile(id){
-  const op=items.find(x=>x.id===openId); if(!op || itemLocked(op)) return;
-  const m=findMeta(id); if(!m) return;
-  m.rot=((m.rot||0)+90)%360;
-  document.querySelectorAll('#detailwrap .blk').forEach(b=>{
-    const a=getFiles(b); let ch=false; a.forEach(x=>{ if(x.id===id){ x.rot=m.rot; ch=true; } }); if(ch) setFiles(b,a);
-  });
-  try{
-    const u=await fileUrl(m); const im=document.getElementById('viewimg'); if(im&&u) im.src=u;
-    document.querySelectorAll('#detailwrap img[data-fid="'+id+'"]').forEach(async t=>{
-      t.dataset.rot=m.rot; const uu=await fileUrl({id,type:m.type,rot:m.rot}); if(uu) t.src=uu;
+
+function onFactureFileChange(evt){
+  const id = document.getElementById('editId').value;
+  const file = evt.target.files[0];
+  if(!id || !file) return;
+  if(file.type && file.type.startsWith('image/')){
+    compressImage(file).then(dataUrl=>saveAttachment(id, file.name, 'image/jpeg', dataUrl, evt)).catch(()=>{
+      const reader = new FileReader();
+      reader.onload = ()=>saveAttachment(id, file.name, file.type, reader.result, evt);
+      reader.readAsDataURL(file);
     });
-  }catch(e){}
-  try{ await save(true); }catch(e){}
+  } else {
+    const reader = new FileReader();
+    reader.onload = ()=>saveAttachment(id, file.name, file.type, reader.result, evt);
+    reader.onerror = ()=>{ document.getElementById('factureList').innerHTML = '<div style="color:var(--red); font-size:.85rem;">Impossible de lire ce fichier.</div>'; };
+    reader.readAsDataURL(file);
+  }
 }
-async function viewFile(id){
-  { const lk=items.find(x=>x.id===openId); if(!lk || itemLocked(lk)) return; }
-  collectOpenInline();
-  const m=findMeta(id); if(!m) return;
-  if(!isImg(m)){ downloadFile(id); return; }
-  const op=items.find(x=>x.id===openId); const canRot=!!(op && !itemLocked(op));
+
+function compressImage(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxDim = 1600;
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w > h){ h = Math.round(h * maxDim / w); w = maxDim; } else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function saveAttachment(id, name, type, dataUrl, evt){
   try{
-    const u=await fileUrl(m);
-    if(!u){ toast('Fichier absent de cet appareil'); return; }
-    openModal(`<div style="text-align:center"><img id="viewimg" src="${u}" style="display:inline-block; max-width:100%; max-height:58vh; width:auto; height:auto; object-fit:contain; border-radius:10px" alt=""></div>
-      <div class="foot"><div class="row2">${canRot?`<button onclick="rotateFile('${id}')">↻ Tourner</button>`:''}<button onclick="closeModal()">Fermer</button><button class="primary" style="margin-top:0" onclick="downloadFile('${id}')">Enregistrer</button></div></div>`);
-  }catch(e){ toast('Cette pièce est illisible. Supprime-la et ajoute-la de nouveau.'); }
-}
-
-/* --- édition directe dans la fiche (cadenas vert) --- */
-let edT=null;
-function upperInput(el){ const a=el.selectionStart,b=el.selectionEnd; el.value=el.value.toUpperCase(); try{el.setSelectionRange(a,b);}catch(e){} }
-function collectInline(id){
-  const it=items.find(x=>x.id===id), box=document.getElementById('ed_'+id);
-  if(!it||!box) return;
-  const f={}; const nm=box.querySelector('.ename');
-  f.name=((nm&&nm.value.trim())?nm.value.trim():(it.f.name||'')).toUpperCase();
-  let n=0;
-  Array.from(box.querySelectorAll('.blk')).forEach((b,i)=>{
-    const ta=b.querySelector('textarea.etext'); const v=cleanTxt(ta.value); const fl=getFiles(b);
-    if(i===0){ f.text=v; f.h_text=ta.offsetHeight; if(fl.length) f.a_text=fl; }
-    else if(v||fl.length){ f['m'+n]=v; f['h_m'+n]=ta.offsetHeight; if(fl.length) f['a_m'+n]=fl; n++; }
-  });
-  it.f=f;
-  const dt=document.querySelector('.dtitle'); if(dt) dt.textContent=f.name;
-}
-function collectOpenInline(){
-  if(!openId) return;
-  const it=items.find(x=>x.id===openId);
-  if(it && !itemLocked(it) && it.cat==='other') collectInline(openId);
-}
-function inlineChanged(){
-  clearTimeout(edT);
-  edT=setTimeout(async()=>{ collectOpenInline(); try{ await save(true); }catch(e){} }, 900);
-}
-function blockHtml(k,text,fl,extra){
-  const hide = !(text||'').trim() && (fl||[]).length>0;
-  return `<div class="blk${extra?' xblk':''}${hide?' fonly':''}" data-files="${esc(JSON.stringify(fl||[]))}">
-    <textarea class="etext${extra?' xpad':''}${hide?' hid':''}"${k?` data-k="${k}"`:''} oninput="inlineChanged()">${esc(text||'')}</textarea>
-    <div class="lnks elnks">${linksHtml(text)}</div>
-    ${extra?'<button type="button" class="xdel" onclick="askDelExtra(this)">Supprimer</button>':''}
-    <div class="fl">${fileRowsEdit(fl||[])}</div>
-    <div class="fbtns"><button type="button" class="gen" onclick="this.parentNode.querySelector('.fgal').click()">🖼️ Galerie photo</button><button type="button" class="gen" onclick="this.parentNode.querySelector('.fcam').click()">📷 Prendre une photo</button><button type="button" class="gen" onclick="this.parentNode.querySelector('.fin').click()">📎 Fichier</button><button type="button" class="gen txtbtn" onclick="showText(this)">✏️ Texte</button><button type="button" class="gen" onclick="toggleBullets(this)">• Puces</button><input class="fgal" type="file" accept="image/*" multiple style="display:none" onchange="onPickFile(this)"><input class="fin" type="file" multiple style="display:none" onchange="onPickFile(this)"><input class="fcam" type="file" accept="image/*" capture="environment" style="display:none" onchange="onPickFile(this)"></div>
-  </div>`;
-}
-function refreshLinks(blk){
-  const ta=blk&&blk.querySelector('textarea.etext'); const box=blk&&blk.querySelector('.elnks');
-  if(!ta||!box) return;
-  const h=linksHtml(ta.value); if(box.innerHTML!==h) box.innerHTML=h;
-}
-document.addEventListener('input',function(e){
-  const t=e.target; if(t && t.matches && t.matches('textarea.etext')) refreshLinks(t.closest('.blk'));
-});
-function refreshBlock(blk){
-  const ta=blk.querySelector('textarea.etext'); if(!ta) return;
-  const fl=getFiles(blk); const empty=!cleanTxt(ta.value);
-  const hide = empty && fl.length>0 && !blk.dataset.showtxt;
-  ta.classList.toggle('hid',hide); blk.classList.toggle('fonly',hide);
-}
-function showText(btn){
-  const blk=btn.closest('.blk'); blk.dataset.showtxt='1'; refreshBlock(blk);
-  const ta=blk.querySelector('textarea.etext');
-  if(!ta.style.height || ta.offsetHeight<48) ta.style.height='90px';
-  ta.focus(); try{ const n=ta.value.length; ta.setSelectionRange(n,n); }catch(e){}
-}
-function toggleBullets(btn){
-  const blk=btn.closest('.blk'); const ta=blk.querySelector('textarea.etext');
-  blk.dataset.showtxt='1'; refreshBlock(blk);
-  if(!ta.value.trim()){ ta.value='• '; ta.focus(); try{ta.setSelectionRange(2,2);}catch(e){} }
-  else{
-    const lines=ta.value.split('\n');
-    const filled=lines.filter(l=>l.trim()!=='');
-    const all=filled.length>0 && filled.every(l=>/^\s*•/.test(l));
-    ta.value=lines.map(l=>{
-      if(l.trim()==='') return l;
-      return all ? l.replace(/^\s*•\s?/,'') : (/^\s*•/.test(l) ? l : '• '+l);
-    }).join('\n');
+    const items = (await idbGetFacture(id)) || [];
+    items.push({attId: 'a'+Date.now()+Math.random().toString(36).slice(2,7), name, type, dataUrl});
+    await idbSetFacture(id, items);
+    if(evt) evt.target.value = '';
+    await updateFactureSection();
+  }catch(e){
+    document.getElementById('factureList').innerHTML = '<div style="color:var(--red); font-size:.85rem;">Impossible d\'enregistrer ce fichier (trop volumineux).</div>';
   }
-  if(!ta.style.height || ta.offsetHeight<90) ta.style.height='90px';
-  if(ta.scrollHeight>ta.clientHeight) ta.style.height=(ta.scrollHeight+4)+'px';
-  ta.dispatchEvent(new Event('input',{bubbles:true}));
 }
-function splitFiles(it){
-  if(it.cat!=='other') return false;
-  const ks=['text'].concat(extraKeys(it));
-  const blocks=ks.map(k=>({t:it.f[k]||'', a:(it.f['a_'+k]||[]).slice(), h:it.f['h_'+k]}));
-  if(!blocks.some(b=>b.a.length>1)) return false;
-  const out=[];
-  blocks.forEach(b=>{
-    if(b.a.length<=1){ out.push(b); }
-    else { out.push({t:b.t,a:[b.a[0]],h:b.h}); b.a.slice(1).forEach(x=>out.push({t:'',a:[x],h:0})); }
-  });
-  const f={name:it.f.name};
-  out.forEach((b,i)=>{ const k=i===0?'text':'m'+(i-1); f[k]=b.t; if(b.h) f['h_'+k]=b.h; if(b.a.length) f['a_'+k]=b.a; });
-  it.f=f; return true;
+
+let pendingDocDeleteId = null;
+let pendingRenameId = null;
+
+function renommerFacture(attId){
+  pendingRenameId = attId;
+  (async()=>{
+    const id = document.getElementById('editId').value;
+    if(!id) return;
+    const items = (await idbGetFacture(id)) || [];
+    const data = items.find(it=>it.attId===attId);
+    document.getElementById('docRenameInput').value = data ? (data.name||'') : '';
+    document.getElementById('docRenameOverlay').classList.add('open');
+  })();
 }
-function addInlineExtra(id){
-  const box=document.querySelector('#ed_'+id+' .eextras'); if(!box) return;
-  box.insertAdjacentHTML('beforeend', blockHtml('',  '', [], true));
-  const t=box.lastElementChild.querySelector('textarea'); t.style.height='90px'; attachGrow(t);
-  t.scrollIntoView({block:'center'}); t.focus();
+function closeDocRename(){
+  pendingCommRename = null;
+  pendingRenameId = null;
+  document.getElementById('docRenameOverlay').classList.remove('open');
 }
-function initInline(){
-  document.querySelectorAll('#detailwrap textarea.etext').forEach(ta=>{
-    const blk0=ta.closest('.blk'); if(blk0) refreshBlock(blk0);
-    if(ta.classList.contains('hid')) return;
-    const body=ta.closest('.body'); const id=body?body.id.replace('ed_',''):''; const it=items.find(x=>x.id===id);
-    const k=ta.dataset.k; let h=(it&&k)?(parseInt(it.f['h_'+k])||0):0;
-    const blk=ta.closest('.blk'); const hasFiles=blk && getFiles(blk).length>0;
-    const empty=!ta.value.trim();
-    let minH=90;
-    if(empty && hasFiles){ minH=48; h=0; }
-    ta.style.height='auto'; ta.style.height=Math.max(h, ta.scrollHeight+4, minH)+'px';
-    attachGrow(ta);
-  });
-}
-function lockRow(it){
-  const locked=itemLocked(it);
-  return `<button type="button" class="lockbtn ${locked?'closed':'open'}" onclick="toggleLock('${it.id}')">${locked?LK_CLOSED:LK_OPEN}</button>`;
-}
-function extraKeys(it){ return Object.keys(it.f).filter(k=>/^m\d+$/.test(k)).sort((a,b)=>parseInt(a.slice(1))-parseInt(b.slice(1))); }
-function editHtml(it){
-  const ks=extraKeys(it);
-  return `<div class="body" id="ed_${it.id}">
-    <label style="margin-top:14px">Titre</label>
-    <input class="ename" type="text" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc((it.f.name||'').toUpperCase())}" oninput="upperInput(this); inlineChanged()">
-    <div style="margin-top:14px">${blockHtml('text', it.f.text, it.f.a_text, false)}</div>
-    <div class="eextras">${ks.map(k=>blockHtml(k, it.f[k], it.f['a_'+k], true)).join('')}</div>
-    <button class="gen" onclick="addInlineExtra('${it.id}')">+ Ajouter un onglet</button>
-    <div class="acts"><button class="danger" onclick="askDelete('${it.id}')">Supprimer le dossier</button></div>
-  </div>`;
-}
-function readHtml(it){
-  if(it.cat==='other'){
-    const ks=['text'].concat(extraKeys(it));
-    return '<div class="body">'+ks.map(k=>{
-      const v=it.f[k]||'', fl=it.f['a_'+k]||[];
-      if(!v && !fl.length) return '';
-      return `<div class="fld ro">${v?`<div class="val"><div class="txt plain">${esc(v)}</div><button onclick="copyField('${it.id}','${k}')">Copier</button></div>`:''}${linksHtml(v)}${filesRo(fl)}</div>`;
-    }).join('')+'</div>';
+async function confirmDocRename(){
+  if(pendingCommRename){
+    const cid = pendingCommRename; pendingCommRename = null;
+    const nn = document.getElementById('docRenameInput').value.trim();
+    document.getElementById('docRenameOverlay').classList.remove('open');
+    if(nn){ await renameCommission(cid, nn); }
+    return;
   }
-  const locked=itemLocked(it);
-  return '<div class="body">'+itemFields(it).slice(1).map(([k,l])=>{
-    const v=it.f[k]; if(!v) return '';
-    return `<div class="fld"><small>${esc(l)}</small><div class="val"><div class="txt plain">${esc(v)}</div><button onclick="copyField('${it.id}','${k}')">Copier</button></div></div>`;
-  }).join('')+(locked?'':`<div class="acts"><button onclick="editItem('${it.id}')">✏️ Modifier</button><button class="danger" onclick="askDelete('${it.id}')">Supprimer</button></div>`)+'</div>';
-}
-function detailHtml(it){
-  const locked=itemLocked(it);
-  const body=(!locked && it.cat==='other') ? editHtml(it) : readHtml(it);
-  return `<header class="dhead"><button type="button" class="back" onclick="toggle('${it.id}')">←</button><div class="dtitle">${esc((it.f.name||'Sans titre').toUpperCase())}</div>${lockRow(it)}</header>${body}`;
-}
-
-/* --- cadenas --- */
-async function toggleLock(id){
-  const it=items.find(x=>x.id===id); if(!it) return;
-  collectOpenInline();
-  it.locked = !itemLocked(it);
-  renderList();
-  await save(true);
-}
-async function toggle(id){
-  clearTimeout(edT);
-  collectOpenInline();
-  const prev=openId; let changed=false;
-  const lockIt=pid=>{ const p=items.find(x=>x.id===pid); if(p && !itemLocked(p)){ p.locked=true; changed=true; } };
-  if(prev===id){ lockIt(id); openId=null; }
-  else { if(prev) lockIt(prev); openId=id; }
-  revealed=new Set(); renderList();
-  try{ window.scrollTo(0,0); }catch(e){}
-  if(changed) await save(true);
+  const attId = pendingRenameId;
+  const newName = document.getElementById('docRenameInput').value.trim();
+  document.getElementById('docRenameOverlay').classList.remove('open');
+  pendingRenameId = null;
+  const id = document.getElementById('editId').value;
+  if(!id || !attId || !newName) return;
+  const items = (await idbGetFacture(id)) || [];
+  const it = items.find(x=>x.attId===attId);
+  if(it){ it.name = newName; await idbSetFacture(id, items); }
+  await updateFactureSection();
 }
 
-function cardHtml(it){
-  const c=CATS[it.cat];
-  const sub = it.f.user || it.f.holder || '';
-  return `<div class="card"><div class="head" onclick="toggle('${it.id}')">
-    <div class="ico">${c.icon}</div><div class="ttl"><b>${esc((it.f.name||'Sans titre').toUpperCase())}</b><span>${esc(sub)}</span></div>
-    <div class="chev">›</div></div></div>`;
-}
-function reveal(id,k){ const t=id+k; revealed.has(t)?revealed.delete(t):revealed.add(t); renderList(); }
-function copyField(id,k){ const it=items.find(x=>x.id===id); if(it) copyText(it.f[k]||''); }
-
-/* ---------- Ajouter / modifier ---------- */
-function newFicheForm(){
-  openModal(`<h2>Nouveau dossier</h2>
-    <label>Titre</label>
-    <input id="nf_name" type="text" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" oninput="upperInput(this)" onkeydown="if(event.key==='Enter')createFiche()">
-    <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
-    <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="createFiche()">Créer</button></div></div>`);
-  setTimeout(()=>{ const e=$('#nf_name'); if(e) e.focus(); }, 50);
-}
-async function createFiche(){
-  const e=$('#nf_name'); const name=(e?e.value.trim():'').toUpperCase();
-  if(!name) return setErr('Donne un nom à ce dossier.');
-  const n={id:newId(), cat:'other', f:{name, text:''}, t:Date.now(), locked:false};
-  items.push(n); openId=n.id; closeModal(); renderList();
-  try{ window.scrollTo(0,0); }catch(x){}
-  await save();
-}
-function editItem(id){
-  if(!id){ newFicheForm(); return; }
-  const it = id ? items.find(x=>x.id===id) : null;
-  const cat = it ? it.cat : 'other';
-  renderForm(cat, it ? it.f : {}, id);
-}
-function renderForm(cat, vals, id){
-  const c=CATS[cat];
-  const catRow = '';
-  const fields=c.fields.map(([k,l,sec,area])=>((cat==='other' && k==='text')?'':`<label>${esc(l)}</label>`)+
-    (area?`<textarea id="f_${k}">${esc(vals[k]||'')}</textarea>`:(k==='name'?`<input id="f_${k}" type="text" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" oninput="const a=this.selectionStart,b=this.selectionEnd;this.value=this.value.toUpperCase();this.setSelectionRange(a,b)" value="${esc((vals[k]||'').toUpperCase())}">`:`<input id="f_${k}" type="text" autocomplete="off" autocapitalize="none" value="${esc(vals[k]||'')}">`))+
-    (k==='pwd'?`<button class="gen" onclick="$('#f_pwd').value=genPassword()">🎲 Générer un mot de passe solide</button>`:'')).join('');
-  let extras='';
-  if(cat==='other'){
-    const ks=Object.keys(vals).filter(k=>/^m\d+$/.test(k)).sort((a,b)=>parseInt(a.slice(1))-parseInt(b.slice(1)));
-    extras='<div id="extras">'+ks.map(k=>extraBlock(vals[k])).join('')+'</div><button class="gen" onclick="addExtra()">+ Ajouter un onglet</button>';
-  }
-  openModal(`<h2>${id?'Modifier':'Nouvelle fiche'}</h2>${catRow}${fields}${extras}
-    <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
-    <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="saveItem('${cat}','${id||''}')">Enregistrer</button></div></div>`);
-  window._formVals = vals;
-  if(cat==='other') renumber();
-  fitAreas(vals);
-}
-function bulletize(ta){
-  if(ta.dataset.bul) return; ta.dataset.bul='1';
-  ta.addEventListener('focus',()=>{ if(!ta.value.trim()){ ta.value='• '; ta.setSelectionRange(2,2); } });
-  ta.addEventListener('beforeinput',e=>{
-    if(e.inputType!=='insertLineBreak' && e.inputType!=='insertParagraph') return;
-    e.preventDefault();
-    const st=ta.selectionStart, en=ta.selectionEnd, v=ta.value;
-    const ls=v.lastIndexOf('\n',st-1)+1;
-    const line=v.slice(ls,st);
-    if(line.trim()==='•'){
-      // ligne de puce vide : on termine la liste
-      ta.setRangeText('', ls, en, 'end');
+let currentDocData = null;
+async function voirFacture(attId){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  try{
+    const items = (await idbGetFacture(id)) || [];
+    const data = items.find(it=>it.attId===attId);
+    if(!data || !data.dataUrl) return;
+    currentDocData = data;
+    const title = document.getElementById('docPreviewTitle');
+    const body = document.getElementById('docPreviewBody');
+    title.textContent = data.name || 'Document';
+    const type = data.type || '';
+    if(type.startsWith('image/')){
+      body.innerHTML = `<img src="${data.dataUrl}" style="max-width:100%; border-radius:8px; opacity:0; transition:opacity .15s;" onload="this.style.opacity=1">`;
+    } else if(type.startsWith('video/')){
+      body.innerHTML = `<video src="${data.dataUrl}" controls playsinline style="max-width:100%; border-radius:8px;"></video>`;
+    } else if(type === 'application/pdf'){
+      body.innerHTML = `<iframe src="${data.dataUrl}" style="width:100%; height:60vh; border:none; border-radius:8px; background:#fff;"></iframe><p style="color:var(--dim); font-size:.78rem; margin-top:10px;">Si l'aperçu ne s'affiche pas, utilise le bouton Télécharger.</p>`;
+    } else if(estTableur(data)){
+      document.getElementById('docPreviewOverlay').classList.add('open');
+      await afficherTableur(data, body);
+      return;
     } else {
-      ta.setRangeText('\n• ', st, en, 'end');
+      body.innerHTML = `<p style="color:var(--dim); font-size:.9rem;">Aperçu non disponible pour ce type de fichier. Utilise le bouton Télécharger ci-dessous.</p>`;
     }
-    ta.dispatchEvent(new Event('input',{bubbles:true}));
-  });
+    document.getElementById('docPreviewOverlay').classList.add('open');
+  }catch(e){}
 }
-function attachGrow(ta){
-  bulletize(ta);
-  ta.addEventListener('input',()=>{ if(ta.scrollHeight>ta.clientHeight) ta.style.height=(ta.scrollHeight+4)+'px'; });
+function dataUrlToBlob(dataUrl){
+  const commaIdx = dataUrl.indexOf(',');
+  const header = dataUrl.slice(0, commaIdx);
+  const base64 = dataUrl.slice(commaIdx + 1);
+  const mimeMatch = header.match(/data:(.*?);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for(let i = 0; i < binary.length; i++){ bytes[i] = binary.charCodeAt(i); }
+  return new Blob([bytes], { type: mime });
 }
-function fitAreas(vals){
-  const xs=Array.from(document.querySelectorAll('.xtra'));
-  document.querySelectorAll('#modal textarea').forEach(ta=>{
-    let k = ta.classList.contains('xtra') ? 'm'+xs.indexOf(ta) : (ta.id||'').replace('f_','');
-    const h = parseInt((vals||{})['h_'+k])||0;
-    ta.style.height='auto';
-    ta.style.height=Math.max(h, ta.scrollHeight+4, 90)+'px';
-    attachGrow(ta);
-  });
-}
-function extraBlock(val){
-  return `<div class="xblk"><textarea class="xtra">${esc(val||'')}</textarea>
-    <button type="button" class="xdel" onclick="askDelExtra(this)">Supprimer</button></div>`;
-}
-function askDelExtra(btn){
-  btn.style.display='none';
-  btn.parentNode.insertAdjacentHTML('beforeend',`<div class="cfm" style="margin-top:8px; padding:12px; border:1px solid #5a2f2b; border-radius:10px;">
-    <div style="margin-bottom:10px">Supprimer cet onglet et son contenu ?</div>
-    <div class="row2"><button onclick="cancelDelExtra(this)">Non, garder</button><button class="danger" onclick="removeBlock(this)">Oui, supprimer</button></div></div>`);
-}
-function cancelDelExtra(btn){
-  const b=btn.closest('.xblk'); b.querySelector('.cfm').remove(); b.querySelector('.xdel').style.display='';
-}
-function renumber(){}
-function addExtra(){
-  const box=$('#extras'); box.insertAdjacentHTML('beforeend', extraBlock(''));
-  renumber();
-  const t=box.lastElementChild.querySelector('textarea'); attachGrow(t); t.scrollIntoView({block:'center'}); t.focus();
-}
-function cleanTxt(v){ return v.split('\n').filter(l=>l.trim()!=='•').join('\n').trim(); }
-function readForm(cat){
-  const o={}; CATS[cat].fields.forEach(([k])=>{ const e=$('#f_'+k); o[k]=e?(e.tagName==='TEXTAREA'?cleanTxt(e.value):e.value.trim()):''; });
-  if(o.name) o.name=o.name.toUpperCase();
-  CATS[cat].fields.forEach(([k,,,area])=>{ if(area){ const e=$('#f_'+k); if(e) o['h_'+k]=e.offsetHeight; } });
-  if(cat==='other'){
-    let n=0; document.querySelectorAll('.xtra').forEach(e=>{ const v=cleanTxt(e.value); if(v){ o['m'+n]=v; o['h_m'+n]=e.offsetHeight; n++; } });
+const DL_EXT_OK = ['gif','png','jpg','jpeg','webp','mp4','webm','txt','json','md','docx','pptx','epub','csv','ttf','html','svg','pdf','xlsx','zip'];
+const DL_MIME_EXT = {
+  'application/pdf':'pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx',
+  'text/csv':'csv','text/plain':'txt','application/json':'json',
+  'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif',
+  'video/mp4':'mp4','video/webm':'webm','application/zip':'zip'
+};
+function nomPourTelechargement(doc){
+  let name = (doc.name || 'document').trim() || 'document';
+  const m = name.match(/\.([A-Za-z0-9]+)$/);
+  if(m && DL_EXT_OK.includes(m[1].toLowerCase())) return name;
+  let ext = DL_MIME_EXT[doc.type || ''];
+  if(!ext && doc.dataUrl){
+    const mm = doc.dataUrl.match(/^data:([^;,]+)/);
+    if(mm) ext = DL_MIME_EXT[mm[1]];
   }
-  return o;
+  if(!ext) return null;
+  return name.replace(/\.[A-Za-z0-9]+$/, '') + '.' + ext;
 }
-function switchCat(cat){
-  const cur = (()=>{ const o={}; Object.keys(CATS).forEach(()=>{}); return {}; })();
-  renderForm(cat, {}, null);
+async function telechargerDocumentCourant(){
+  const btn = document.getElementById('docDownloadLink');
+  if(!currentDocData || !currentDocData.dataUrl) return;
+  const nomOriginal = 'Télécharger';
+  const flash = (txt, ms)=>{ btn.textContent = txt; setTimeout(()=>btn.textContent=nomOriginal, ms||3500); };
+  try{
+    const filename = nomPourTelechargement(currentDocData);
+    if(!filename){ flash('Format non pris en charge', 4000); return; }
+    const downloads = await claude.use('downloads');
+    if(!downloads){ flash('Indisponible ici', 3500); return; }
+    btn.textContent = 'Préparation...';
+    const blob = dataUrlToBlob(currentDocData.dataUrl);
+    const res = await downloads.save({ filename, data: blob });
+    flash(res.status === 'saved' ? '✓ Enregistré' : nomOriginal, 2000);
+  }catch(e){
+    if(e && e.code === 'declined'){ btn.textContent = nomOriginal; return; }
+    flash('Échec : ' + (e && e.code ? e.code : 'erreur'), 4000);
+  }
 }
-async function saveItem(cat,id){
-  const f=readForm(cat);
-  if(!f.name) return setErr('Donne un nom à cette fiche.');
-  if(id){ const it=items.find(x=>x.id===id); it.f=f; it.locked=true; }
-  else { const n={id:newId(), cat, f, t:Date.now(), locked:(cat!=='other')}; items.push(n); openId=n.id; }
-  closeModal(); renderList(); await save();
-}
-function askDelete(id){
-  const it=items.find(x=>x.id===id);
-  openModal(`<h2>Supprimer ?</h2><p style="color:var(--dim)">« ${esc(it.f.name)} » sera effacé définitivement.</p>
-    <div class="row2"><button onclick="closeModal()">Annuler</button><button class="danger" onclick="doDelete('${id}')">Supprimer</button></div>`);
-}
-async function doDelete(id){
-  const del=items.find(x=>x.id===id); if(del){ filesOfItem(del).forEach(fid=>fDel(fid)); }
-  items=items.filter(x=>x.id!==id); openId=null; closeModal(); renderList(); await save();
+function closeDocPreview(){
+  document.getElementById('docPreviewOverlay').classList.remove('open');
+  document.getElementById('docPreviewBody').innerHTML = '';
 }
 
-/* ---------- Réglages ---------- */
-function lastBkText(){
-  const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
-  const t=Math.max(f,l);
-  if(!t) return 'Aucune sauvegarde faite sur cet appareil.';
-  return 'Dernière sauvegarde : '+new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'.';
+function supprimerFacture(attId){
+  pendingDocDeleteId = attId;
+  document.getElementById('docConfirmOverlay').classList.add('open');
 }
-function openSettings(){
-  openModal(`<h2>Réglages</h2>
-    <p style="color:var(--dim); font-size:.8rem; margin:4px 0 6px">${esc(lastBkText())}</p>
-    <button class="setbtn" onclick="changePwForm()">🔑 Changer le code secret</button>
-    <button class="setbtn" onclick="doBackupFull()">💾 Faire une sauvegarde<small>Textes, photos et fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
-    <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>L'appli reconnaît toute seule le fichier de sauvegarde.</small></button>
-    <input type="file" id="restFile" style="display:none" onchange="onRestoreFile(event)">
-    <button class="setbtn" onclick="closeModal()" style="margin-top:18px">Fermer</button>`);
+function cancelDocDelete(){
+  pendingCommDelete = null;
+  pendingDocDeleteId = null;
+  document.getElementById('docConfirmOverlay').classList.remove('open');
 }
-function changePwForm(){
-  openModal(`<h2>Nouveau code secret</h2>
-    <div class="warn">Solide : 12 chiffres, ou 10 caractères avec lettres et chiffres. Si tu l'oublies, il ne peut pas être récupéré : note-le sur papier.</div>
-    <label>Code actuel</label><input type="password" id="n0" autocomplete="current-password" autocapitalize="none">
-    <label>Nouveau code</label><input type="password" id="n1" autocomplete="new-password" autocapitalize="none" oninput="codeHint(this.value)">
-    <div id="hint" style="font-size:.84rem; margin-top:6px; min-height:1.2em"></div>
-    <label>Retape-le</label><input type="password" id="n2" autocomplete="new-password" autocapitalize="none">
-    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code solide (12 chiffres)</button>
-    <div id="genmsg" style="color:var(--brass); font-size:.84rem; margin-top:8px"></div>
-    <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
-    <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="doChangePw()">Changer</button></div></div>`);
-}
-async function doChangePw(){
-  const cur=normCode($('#n0').value), a=normCode($('#n1').value), b=normCode($('#n2').value);
-  if(!cur) return setErr('Entre ton code actuel.');
-  try{ const k0=await deriveKey(cur, salt, iters); await decryptRecord(record, k0); }
-  catch(e){ return setErr('Code actuel incorrect.'); }
-  const pr=codeProblem(a); if(pr) return setErr(pr);
-  if(a!==b) return setErr('Les deux codes ne sont pas identiques.');
-  salt=crypto.getRandomValues(new Uint8Array(16)); iters=1000000; strongFlag=true; key=await deriveKey(a, salt, iters);
-  closeModal(); await save(); if(keepExp){ try{ await kvSet('keep',{key,exp:keepExp}); }catch(e){} }
-  renderWarn(); toast('✓ Code secret changé');
-}
-function dateTag(){ const d=new Date(); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
-async function doBackup(){
-  try{
-    const rec=await encryptRecord();
-    await saveBlobAs('coffre-sauvegarde-legere-'+dateTag()+'.json', new Blob([JSON.stringify(rec)], {type:'application/json'}));
-    try{ localStorage.setItem('coffre_lastbk', String(Date.now())); }catch(e){}
-    closeModal(); renderWarn();
-  }catch(e){ if(!(e&&e.code==='declined')) toast('Échec de la sauvegarde'); }
-}
-async function doBackupFull(){
-  try{
-    toast('Préparation de la sauvegarde… patiente un instant');
-    const rec=await encryptRecord();
-    const entries=[], parts=[]; let off=0;
-    const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>ids.push(id)));
-    for(const id of ids){
-      const r=await fGet(id); if(!r) continue;
-      const ct=new Uint8Array(r.ct);
-      entries.push({id, iv:b64(r.iv), k:(r.k?1:0), off, len:ct.length});
-      parts.push(ct); off+=ct.length;
-    }
-    const header=new TextEncoder().encode(JSON.stringify({v:2, record:rec, files:entries}));
-    const lenBuf=new Uint8Array(4); new DataView(lenBuf.buffer).setUint32(0, header.length);
-    const magic=new TextEncoder().encode('COFFRE2\n');
-    const blob=new Blob([magic, lenBuf, header].concat(parts), {type:'application/octet-stream'});
-    await saveBlobAs('coffre-sauvegarde-complete-'+dateTag()+'.coffre', blob);
-    try{ localStorage.setItem('coffre_lastfull', String(Date.now())); localStorage.setItem('coffre_lastbk', String(Date.now())); }catch(e){}
-    closeModal(); renderWarn();
-    toast('✓ Sauvegarde complète : '+entries.length+' fichier(s) inclus');
-  }catch(e){ if(!(e&&e.code==='declined')) toast('Échec de la sauvegarde complète'); }
-}
-let pendingFull=null;
-function restoreModal(){
-  openModal(`<h2>Restaurer la sauvegarde</h2>
-    <div class="warn">Le contenu actuel du coffre sera remplacé par celui de la sauvegarde.</div>
-    <label>Code secret de cette sauvegarde</label><input type="password" id="rp" autocapitalize="none">
-    <div class="err" id="err"></div>
-    <div class="row2" style="margin-top:14px"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="doRestore()">Restaurer</button></div>`);
-}
-async function onRestoreFile(ev){
-  const f=ev.target.files[0]; ev.target.value=''; if(!f) return;
-  pendingFull=null;
-  try{
-    const head=new TextDecoder().decode(new Uint8Array(await f.slice(0,8).arrayBuffer()));
-    if(head==='COFFRE2\n'){
-      const len=new DataView(await f.slice(8,12).arrayBuffer()).getUint32(0);
-      const h=JSON.parse(new TextDecoder().decode(new Uint8Array(await f.slice(12,12+len).arrayBuffer())));
-      if(!h.record||!h.record.salt||!h.record.iv||!h.record.data) throw 0;
-      pendingRestore=h.record; pendingFull={file:f, base:12+len, files:h.files||[]};
-      restoreModal(); return;
-    }
-    const rec=JSON.parse(await f.text());
-    if(!rec.salt||!rec.iv||!rec.data) throw 0;
-    pendingRestore=rec; restoreModal();
-  }catch(e){ toast('Ce fichier n\'est pas une sauvegarde valide'); }
-}
-async function doRestore(){
-  const p=$('#rp').value; if(!p||!pendingRestore) return;
-  try{
-    const s=unb64(pendingRestore.salt), it=pendingRestore.it||310000, k=await deriveKey(normCode(p), s, it);
-    items=await decryptRecord(pendingRestore, k); key=k; salt=s; iters=it; strongFlag=!!pendingRestore.s; pendingRestore=null;
-    try{ await initDataKey(); }catch(e){}
-    if(pendingFull){
-      toast('Remise des photos et fichiers…');
-      const pf=pendingFull; pendingFull=null;
-      for(const e of pf.files){
-        try{ const ct=await pf.file.slice(pf.base+e.off, pf.base+e.off+e.len).arrayBuffer(); await fPut(e.id,{iv:unb64(e.iv), ct, k:(e.k?1:0)}); }catch(x){}
-      }
-    }
-    closeModal(); openId=null; renderMain(); await save(); if(keepExp){ try{ await kvSet('keep',{key,exp:keepExp}); }catch(e){} }
-  }catch(e){ setErr('Code incorrect pour cette sauvegarde.'); }
+async function confirmDocDelete(){
+  if(pendingCommDelete){
+    const cid = pendingCommDelete; pendingCommDelete = null;
+    document.getElementById('docConfirmOverlay').classList.remove('open');
+    await deleteCommission(cid);
+    return;
+  }
+  const attId = pendingDocDeleteId;
+  document.getElementById('docConfirmOverlay').classList.remove('open');
+  pendingDocDeleteId = null;
+  const id = document.getElementById('editId').value;
+  if(!id || !attId) return;
+  const items = ((await idbGetFacture(id)) || []).filter(it=>it.attId!==attId);
+  await idbSetFacture(id, items);
+  await updateFactureSection();
 }
 
-/* ---------- Démarrage ---------- */
-(async function boot(){
-  await initStore();
-  record = await loadRecord();
-  if(record){
-    // si le coffre n'existait que sur cet appareil, on le copie aussi en ligne
-    if(docRef()){ try{ const s=await docRef().get(); if(!s.exists || (record.ts||0) > (((s.data()||{}).ts)||0)) await docRef().set(record); }catch(e){} }
-    try{
-      const kv = await kvGet('keep');
-      if(kv && kv.exp>Date.now()){
-        try{
-          items = await decryptRecord(record, kv.key); items.forEach(i=>{i.locked=true;}); strongFlag=!!record.s; key=kv.key; salt=unb64(record.salt); iters=record.it||310000;
-          keepExp=kv.exp; keepT=setTimeout(lock, Math.max(1000, kv.exp-Date.now()));
-          try{ await initDataKey(); }catch(e){}
-          renderMain(); return;
-        }catch(e){ await kvDel('keep'); }
-      } else if(kv){ await kvDel('keep'); }
-    }catch(e){}
-    renderLock();
-  } else renderSetup();
-})();
+
+/* ===== Onglet Commissions : tableaux de commission mensuels ===== */
+const COMM_KEY = '__commissions__';
+let pendingCommDelete = null;
+let pendingCommRename = null;
+const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+function monthLabel(m){
+  if(!m || m.length<7) return 'Mois non précisé';
+  const y = m.slice(0,4), mi = parseInt(m.slice(5,7),10)-1;
+  const nom = MOIS_FR[mi] || '';
+  return nom.charAt(0).toUpperCase()+nom.slice(1)+' '+y;
+}
+function commShowMsg(text, ok){
+  const el = document.getElementById('commMsg');
+  if(!el) return;
+  el.textContent = text;
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  el.style.display = 'block';
+  setTimeout(()=>{ el.style.display='none'; }, 3500);
+}
+async function getCommissions(){
+  try{ return (await idbGetFacture(COMM_KEY)) || []; }catch(e){ return []; }
+}
+async function renderCommissions(){
+  const mi = document.getElementById('commMonth');
+  if(mi && !mi.value){
+    const d = new Date();
+    mi.value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  const listEl = document.getElementById('commissionList');
+  if(!listEl) return;
+  const items = await getCommissions();
+  if(items.length===0){
+    listEl.innerHTML = '<div class="empty">Aucun tableau de commission pour l\'instant.<br>Choisis le mois, puis ajoute ton fichier.</div>';
+    return;
+  }
+  const groups = {};
+  items.forEach(it=>{ const k = it.month || ''; (groups[k] = groups[k] || []).push(it); });
+  const months = Object.keys(groups).sort().reverse();
+  listEl.innerHTML = months.map(m => `
+    <div style="margin-bottom:18px;">
+      <div style="font-family:'Fraunces',serif; font-size:1.05rem; color:var(--brass); margin:0 0 8px;">${escapeHtml(monthLabel(m))}</div>
+      ${groups[m].map(it => `<div class="doc-item">
+        <span class="doc-name" style="cursor:pointer; font-weight:500;" onclick="ouvrirOriginalCommission('${it.attId}')">📊 ${escapeHtml(it.name || 'Tableau de commission')}</span>
+        <span class="doc-actions">
+          <button type="button" style="font-weight:600;" onclick="ouvrirOriginalCommission('${it.attId}')">Ouvrir l'original</button>
+          <button type="button" onclick="voirCommission('${it.attId}')">Aperçu rapide</button>
+          <button type="button" onclick="renommerCommission('${it.attId}')">Renommer</button>
+          <button type="button" class="del" onclick="supprimerCommission('${it.attId}')">Supprimer</button>
+        </span>
+      </div>`).join('')}
+    </div>`).join('');
+}
+function onCommissionFileChange(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const month = (document.getElementById('commMonth').value || '');
+  const r = new FileReader();
+  r.onload = ()=>{ saveCommission(file.name, file.type, r.result, month); evt.target.value = ''; };
+  r.onerror = ()=>{ commShowMsg('Impossible de lire ce fichier.', false); evt.target.value = ''; };
+  r.readAsDataURL(file);
+}
+async function saveCommission(name, type, dataUrl, month){
+  try{
+    const items = await getCommissions();
+    items.push({attId:'c'+Date.now()+Math.random().toString(36).slice(2,7), month, name, type, dataUrl});
+    await idbSetFacture(COMM_KEY, items);
+    commShowMsg('✓ Tableau ajouté pour '+monthLabel(month), true);
+    await renderCommissions();
+  }catch(e){
+    commShowMsg('Impossible d\'enregistrer ce fichier (trop volumineux).', false);
+  }
+}
+
+function estTableur(d){
+  const n = ((d && d.name) || '').toLowerCase();
+  const t = (d && d.type) || '';
+  return /\.(xlsx|xls|xlsm|csv|ods)$/.test(n) || t.indexOf('spreadsheetml')>-1 || t==='application/vnd.ms-excel' || t==='text/csv';
+}
+let xlWorkbook = null;
+async function afficherTableur(data, body){
+  body.innerHTML = '<p style="color:var(--dim); font-size:.9rem;">Ouverture du tableau...</p>';
+  try{
+    if(typeof XLSX === 'undefined') throw new Error('lib');
+    const buf = await dataUrlToBlob(data.dataUrl).arrayBuffer();
+    xlWorkbook = XLSX.read(buf, {type:'array'});
+    const names = xlWorkbook.SheetNames;
+    if(!names.length) throw new Error('vide');
+    body.innerHTML = (names.length>1 ? '<div class="xl-tabs" id="xlTabs">'+names.map((n,i)=>`<button type="button" data-i="${i}" onclick="afficherFeuille(${i})">${escapeHtml(n)}</button>`).join('')+'</div>' : '') + '<div class="xl-wrap" id="xlView"></div>';
+    afficherFeuille(0);
+  }catch(e){
+    body.innerHTML = '<p style="color:var(--dim); font-size:.9rem;">Impossible d\'afficher ce tableau ici. Appuie sur Télécharger pour l\'ouvrir.</p>';
+  }
+}
+function afficherFeuille(i){
+  if(!xlWorkbook) return;
+  const name = xlWorkbook.SheetNames[i];
+  const html = XLSX.utils.sheet_to_html(xlWorkbook.Sheets[name], {editable:false});
+  const tbl = html.replace(/^[\s\S]*?<body[^>]*>/i,'').replace(/<\/body>[\s\S]*$/i,'');
+  document.getElementById('xlView').innerHTML = tbl;
+  document.querySelectorAll('#xlTabs button').forEach(b=>b.classList.toggle('on', Number(b.dataset.i)===i));
+}
+async function ouvrirOriginalCommission(attId){
+  try{
+    const items = await getCommissions();
+    const data = items.find(it=>it.attId===attId);
+    if(!data || !data.dataUrl) return;
+    const filename = nomPourTelechargement(data);
+    if(!filename){ commShowMsg('Ce type de fichier ne peut pas être téléchargé ici.', false); return; }
+    const downloads = await claude.use('downloads');
+    if(!downloads){ commShowMsg('Téléchargement indisponible ici.', false); return; }
+    const res = await downloads.save({ filename, data: dataUrlToBlob(data.dataUrl) });
+    if(res && res.status==='saved') commShowMsg('✓ Fichier original enregistré sur ton téléphone (dossier Téléchargements). Ouvre-le avec Excel.', true);
+  }catch(e){
+    if(e && e.code==='declined') return;
+    commShowMsg('Échec : '+(e && e.code ? e.code : 'erreur'), false);
+  }
+}
+async function voirCommission(attId){
+  try{
+    const items = await getCommissions();
+    const data = items.find(it=>it.attId===attId);
+    if(!data || !data.dataUrl) return;
+    currentDocData = data;
+    document.getElementById('docPreviewTitle').textContent = (data.name || 'Tableau de commission') + ' — ' + monthLabel(data.month);
+    currentDocData = data;
+    const body = document.getElementById('docPreviewBody');
+    const type = data.type || '';
+    if(type.startsWith('image/')){
+      body.innerHTML = `<img src="${data.dataUrl}" style="max-width:100%; border-radius:8px;">`;
+    } else if(type === 'application/pdf'){
+      body.innerHTML = `<iframe src="${data.dataUrl}" style="width:100%; height:60vh; border:none; border-radius:8px; background:#fff;"></iframe><p style="color:var(--dim); font-size:.78rem; margin-top:10px;">Si l'aperçu ne s'affiche pas, appuie sur Télécharger.</p>`;
+    } else if(estTableur(data)){
+      document.getElementById('docPreviewOverlay').classList.add('open');
+      await afficherTableur(data, body);
+      body.insertAdjacentHTML('afterbegin','<p style="color:var(--dim); font-size:.75rem; margin:0 0 8px; text-align:left;">Simple affichage de lecture. Le fichier original est conservé tel quel : appuie sur Télécharger pour l\'ouvrir dans Excel.</p>');
+      return;
+    } else {
+      body.innerHTML = `<p style="color:var(--dim); font-size:.9rem;">Aperçu non disponible pour ce type de fichier. Appuie sur le bouton Télécharger ci-dessous pour l'ouvrir.</p>`;
+    }
+    document.getElementById('docPreviewOverlay').classList.add('open');
+  }catch(e){}
+}
+async function renommerCommission(attId){
+  const items = await getCommissions();
+  const data = items.find(it=>it.attId===attId);
+  pendingCommRename = attId;
+  document.getElementById('docRenameInput').value = data ? (data.name||'') : '';
+  document.getElementById('docRenameOverlay').classList.add('open');
+}
+async function renameCommission(attId, newName){
+  const items = await getCommissions();
+  const it = items.find(x=>x.attId===attId);
+  if(it){ it.name = newName; await idbSetFacture(COMM_KEY, items); }
+  await renderCommissions();
+}
+function supprimerCommission(attId){
+  pendingCommDelete = attId;
+  document.getElementById('docConfirmOverlay').classList.add('open');
+}
+async function deleteCommission(attId){
+  const items = (await getCommissions()).filter(it=>it.attId!==attId);
+  await idbSetFacture(COMM_KEY, items);
+  await renderCommissions();
+}
+
+function openForm(id){
+  paiementsLocked = {signature:true, permis:true, feuvert:true};
+  fieldLocks = {nom:true, ged:true, date:true, statut:true, prix:true, commissionPct:true, coCommission:true, remise:true};
+  document.getElementById('editId').value = id || '';
+  const del = document.getElementById('delBtn');
+  if(id){
+    const c = clients.find(x=>x.id===id);
+    document.getElementById('formTitle').textContent = c.nom;
+    document.getElementById('fNom').value = c.nom;
+    document.getElementById('fCouleur').value = c.couleur || '';
+    document.getElementById('fGed').value = c.ged || '';
+    document.getElementById('fDate').value = c.date || '';
+    document.getElementById('fStatut').value = c.statut;
+    document.getElementById('fPrix').value = c.prix || '';
+    document.getElementById('fRemise').value = c.remise || '';
+    document.getElementById('fCommissionPct').value = (c.commissionPct === null || c.commissionPct === undefined) ? '' : Number(c.commissionPct).toFixed(1);
+    document.getElementById('fCoCommission').value = c.coCommission || '';
+    applyFieldColors(c);
+    applyFieldLockState();
+    del.style.display = 'block';
+  } else {
+    document.getElementById('formTitle').textContent = 'Nouveau client';
+    ['fNom','fCouleur','fGed','fDate','fPrix','fRemise','fCommissionPct','fCoCommission'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fStatut').value = 'encours';
+    applyFieldColors(null);
+    applyFieldLockState();
+    del.style.display = 'none';
+  }
+  updateCalc();
+  updatePaiements();
+  updateFactureSection();
+  document.getElementById('overlay').classList.add('open');
+}
+function closeForm(){ document.getElementById('overlay').classList.remove('open'); }
+
+function saveClient(){
+  const nom = document.getElementById('fNom').value.trim();
+  if(!nom){ document.getElementById('fNom').focus(); return; }
+  const id = document.getElementById('editId').value;
+  const data = {
+    nom,
+    couleur: document.getElementById('fCouleur').value,
+    ged: document.getElementById('fGed').value.trim(),
+    date: document.getElementById('fDate').value,
+    statut: document.getElementById('fStatut').value,
+    prix: parseFloat(document.getElementById('fPrix').value) || 0,
+    remise: parseFloat(document.getElementById('fRemise').value) || 0,
+  };
+  let targetId = id;
+  if(id){
+    const i = clients.findIndex(c=>c.id===id);
+    clients[i] = {...clients[i], ...data};
+  } else {
+    data.id = 'c'+Date.now();
+    data.paiements = {signature:false, permis:false, feuvert:false};
+    clients.push(data);
+    targetId = data.id;
+  }
+  save(); render();
+  appHistory = [JSON.stringify(clients)];
+  historyIndex = 0;
+  updateHistoryButtons();
+  openForm(targetId);
+  const msg = document.getElementById('clientSavedMsg');
+  msg.style.display = 'block';
+  setTimeout(()=>{ msg.style.display = 'none'; }, 1500);
+}
+function askDelete(){
+  const id = document.getElementById('editId').value;
+  const c = clients.find(x=>x.id===id);
+  document.getElementById('confirmText').textContent = `"${c ? c.nom : 'ce client'}" sera définitivement supprimé. Cette action est irréversible.`;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function cancelDelete(){ document.getElementById('confirmOverlay').classList.remove('open'); }
+function confirmDelete(){
+  const id = document.getElementById('editId').value;
+  clients = clients.filter(c=>c.id!==id);
+  save();
+  cancelDelete();
+  closeForm();
+  render();
+}
+function uppercaseField(el){
+  const pos = el.selectionStart;
+  el.value = el.value.toUpperCase();
+  el.setSelectionRange(pos, pos);
+  onIdentityFieldChange();
+}
+function onIdentityFieldChange(){
+  const id = document.getElementById('editId').value;
+  if(!id) return;
+  const c = clients.find(x=>x.id===id);
+  if(!c) return;
+  const nom = document.getElementById('fNom').value.trim();
+  const couleur = document.getElementById('fCouleur').value;
+  const ged = document.getElementById('fGed').value.trim();
+  const date = document.getElementById('fDate').value;
+  const statut = document.getElementById('fStatut').value;
+  let changed = false;
+  if(nom && c.nom !== nom){ c.nom = nom; changed = true; }
+  if((c.couleur||'') !== couleur){ c.couleur = couleur; changed = true; }
+  if(c.ged !== ged){ c.ged = ged; changed = true; }
+  if(c.date !== date){ c.date = date; changed = true; }
+  if(c.statut !== statut){ c.statut = statut; changed = true; }
+  if(changed){ save(); render(); }
+}
+function openBackup(){
+  document.getElementById('exportBox').value = JSON.stringify(clients);
+  document.getElementById('importBox').value = '';
+  document.getElementById('backupOverlay').classList.add('open');
+}
+function closeBackup(){ document.getElementById('backupOverlay').classList.remove('open'); }
+function copyExport(){
+  const box = document.getElementById('exportBox');
+  box.select();
+  navigator.clipboard?.writeText(box.value).catch(()=>document.execCommand('copy'));
+}
+function doImport(){
+  const raw = document.getElementById('importBox').value.trim();
+  const box = document.getElementById('importBox');
+  if(!raw) return;
+  try{
+    const data = JSON.parse(raw);
+    if(!Array.isArray(data)) throw new Error();
+    clients = data; save(); closeBackup(); render();
+  }catch(e){
+    box.style.borderColor = 'var(--red)';
+    box.placeholder = 'Code invalide — vérifie le collage et réessaie';
+  }
+}
+
+function handleGlobalNotesKey(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    const ta = e.target;
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const before = ta.value.substring(0,start);
+    const after = ta.value.substring(end);
+    const insert = '\n• ';
+    ta.value = before + insert + after;
+    const pos = start + insert.length;
+    ta.selectionStart = ta.selectionEnd = pos;
+    saveGlobalNotes();
+  }
+}
+function toggleLockNotes(){
+  const ta = document.getElementById('globalNotes');
+  const btn = document.getElementById('btnLockNotes');
+  const locked = ta.hasAttribute('readonly');
+  if(locked){
+    ta.removeAttribute('readonly');
+    ta.style.opacity = '1';
+    btn.textContent = '🔓';
+    btn.style.background = 'var(--lock-off)';
+    localStorage.setItem('facture_global_notes_locked','0');
+  } else {
+    ta.setAttribute('readonly','readonly');
+    ta.style.opacity = '.65';
+    btn.textContent = '🔒';
+    btn.style.background = 'var(--lock-on)';
+    localStorage.setItem('facture_global_notes_locked','1');
+  }
+}
+function saveGlobalNotesManual(){
+  saveGlobalNotes();
+  const msg = document.getElementById('notesSavedMsg');
+  msg.style.display = 'inline';
+  setTimeout(()=>{ msg.style.display = 'none'; }, 1500);
+}
+function saveGlobalNotes(){
+  localStorage.setItem('facture_global_notes_v1', document.getElementById('globalNotes').value);
+}
+document.getElementById('globalNotes').value = localStorage.getItem('facture_global_notes_v1') || '';
+if(localStorage.getItem('facture_global_notes_locked') === '1'){
+  document.getElementById('globalNotes').setAttribute('readonly','readonly');
+  document.getElementById('globalNotes').style.opacity = '.65';
+  document.getElementById('btnLockNotes').textContent = '🔒';
+  document.getElementById('btnLockNotes').style.background = 'var(--lock-on)';
+}
+
+initStorage();
+
+// Fait remonter le champ actif au-dessus du clavier virtuel
+document.querySelectorAll('.sheet input, .sheet select').forEach(el=>{
+  el.addEventListener('focus', ()=>{
+    setTimeout(()=> el.scrollIntoView({behavior:'smooth', block:'center'}), 300);
+  });
+});
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', ()=>{
+    const active = document.activeElement;
+    if(active && (active.tagName==='INPUT' || active.tagName==='SELECT')){
+      setTimeout(()=> active.scrollIntoView({behavior:'smooth', block:'center'}), 100);
+    }
+  });
+}
 </script>
 <script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }</script>
 </body>
