@@ -93,6 +93,14 @@
   .blk textarea.etext{min-height:48px; border:none; background:transparent; border-radius:0; resize:vertical; margin:0;}
   .blk textarea.etext:focus{border:none;}
   .fbtns{display:flex; gap:6px; flex-wrap:wrap; padding:8px 10px; border-top:1px solid var(--line);}
+  .lrows{width:100%;}
+  .lrow{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line);}
+  .lrow:first-child{border-top:none;}
+  .ltx{flex:1; min-width:0; word-break:break-word; font-size:1.02rem; white-space:pre-wrap;}
+  .cpi{width:42px; height:36px; padding:0; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--brass); background:#2a2518; color:#e3bd68;}
+  .cpi.all{border-color:var(--line); background:var(--surface2); color:var(--text);}
+  .cpi svg, .fbtns .undo svg{width:20px; height:20px; display:block;}
+  .fbtns .undo{width:44px; height:34px; padding:0; display:flex; align-items:center; justify-content:center; border:1px solid var(--brass); background:#2a2518; color:#e3bd68;}
   .fbtns .gen{margin:0; padding:6px 10px; font-size:.76rem; border-radius:8px; white-space:nowrap;}
   .fl{margin:0; padding:0 10px;}
   .fl:empty{display:none;}
@@ -301,6 +309,36 @@ function genPassword(){
   const a=crypto.getRandomValues(new Uint32Array(16)); let s='';
   for(let i=0;i<16;i++) s+=set[a[i]%set.length];
   return s;
+}
+const SVG0 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+const IC_COPY = SVG0 + '<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></svg>';
+const IC_ALL = SVG0 + '<rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4h6v3H9z"/><path d="M9 12h6M9 16h6"/></svg>';
+const IC_UNDO = SVG0 + '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>';
+function smartValue(line){
+  let t = String(line||'').replace(/^\s*[•*–-]\s*/, '').trim();
+  if(/^[\d ]+$/.test(t) && /^\d{13,19}$/.test(t.replace(/\s/g,''))) return t.replace(/\s/g,'');
+  let m = t.match(/^([^:：]*[A-Za-zÀ-ÿ][^:：]{0,22}?)\s*[:：]\s+(\S.*)$/);
+  if(m) return m[2].trim();
+  m = t.match(/^(pin|code|mdp|mot de passe|password|identifiant|login|id|cvv|cvc|crypto|cryptogramme|iban|bic|n°|numéro|num|tel|tél|email|mail)(?=[\s:\-])\s*[:\-]?\s*(\S.*)$/i);
+  if(m) return m[2].trim();
+  return t;
+}
+function lineRowsHtml(id,k,v){
+  const lines = String(v).split('\n');
+  const idx = []; lines.forEach((l,i)=>{ if(l.trim()!=='') idx.push(i); });
+  return '<div class="lrows">' + lines.map((l,i)=>{
+    if(l.trim()==='') return '';
+    const all = (i===idx[0] && idx.length>1);
+    const btn = all
+      ? `<button type="button" class="cpi all" onclick="copyField('${id}','${k}')" aria-label="Tout copier">${IC_ALL}</button>`
+      : `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
+    return `<div class="lrow"><div class="ltx">${esc(l)}</div>${btn}</div>`;
+  }).join('') + '</div>';
+}
+function copyLine(id,k,i){
+  const it = items.find(x=>x.id===id); if(!it) return;
+  const line = String(it.f[k]||'').split('\n')[i];
+  copyText(smartValue(line));
 }
 async function copyText(t, keep){
   try{ await navigator.clipboard.writeText(t); }
@@ -673,8 +711,31 @@ function blockHtml(k,text,fl,extra){
     <div class="lnks elnks">${linksHtml(text)}</div>
     ${extra?'<button type="button" class="xdel" onclick="askDelExtra(this)">Supprimer</button>':''}
     <div class="fl">${fileRowsEdit(fl||[])}</div>
-    <div class="fbtns"><button type="button" class="gen" onclick="this.parentNode.querySelector('.fgal').click()">🖼️ Galerie photo</button><button type="button" class="gen" onclick="this.parentNode.querySelector('.fcam').click()">📷 Prendre une photo</button><button type="button" class="gen" onclick="this.parentNode.querySelector('.fin').click()">📎 Fichier</button><button type="button" class="gen txtbtn" onclick="showText(this)">✏️ Texte</button><button type="button" class="gen" onclick="toggleBullets(this)">• Puces</button><input class="fgal" type="file" accept="image/*" multiple style="display:none" onchange="onPickFile(this)"><input class="fin" type="file" multiple style="display:none" onchange="onPickFile(this)"><input class="fcam" type="file" accept="image/*" capture="environment" style="display:none" onchange="onPickFile(this)"></div>
+    <div class="fbtns"><button type="button" class="gen undo" onclick="undoBlock(this)" aria-label="Annuler la dernière modification">${IC_UNDO}</button><button type="button" class="gen" onclick="this.parentNode.querySelector('.fgal').click()">🖼️ Galerie photo</button><button type="button" class="gen" onclick="this.parentNode.querySelector('.fcam').click()">📷 Prendre une photo</button><button type="button" class="gen" onclick="this.parentNode.querySelector('.fin').click()">📎 Fichier</button><button type="button" class="gen txtbtn" onclick="showText(this)">✏️ Texte</button><button type="button" class="gen" onclick="toggleBullets(this)">• Puces</button><input class="fgal" type="file" accept="image/*" multiple style="display:none" onchange="onPickFile(this)"><input class="fin" type="file" multiple style="display:none" onchange="onPickFile(this)"><input class="fcam" type="file" accept="image/*" capture="environment" style="display:none" onchange="onPickFile(this)"></div>
   </div>`;
+}
+const HIST = new WeakMap();
+function histOf(ta){ let h = HIST.get(ta); if(!h){ h = {st:[], cur:ta.value, t:0, busy:false}; HIST.set(ta, h); } return h; }
+document.addEventListener('focusin', function(e){ const ta = e.target; if(ta && ta.matches && ta.matches('textarea.etext')) histOf(ta); });
+document.addEventListener('input', function(e){
+  const ta = e.target; if(!ta || !ta.matches || !ta.matches('textarea.etext')) return;
+  const h = histOf(ta); if(h.busy) return;
+  if(ta.value !== h.cur){
+    const now = Date.now();
+    if(!h.st.length || now - h.t > 700){ h.st.push(h.cur); if(h.st.length > 150) h.st.shift(); }
+    h.cur = ta.value; h.t = now;
+  }
+});
+function undoBlock(btn){
+  const blk = btn.closest('.blk'); const ta = blk && blk.querySelector('textarea.etext'); if(!ta) return;
+  const h = histOf(ta);
+  if(!h.st.length){ toast('Rien à annuler'); return; }
+  h.busy = true;
+  ta.value = h.st.pop(); h.cur = ta.value; h.t = 0;
+  blk.dataset.showtxt = '1'; refreshBlock(blk);
+  ta.style.height = 'auto'; ta.style.height = Math.max(ta.scrollHeight + 4, 90) + 'px';
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+  h.busy = false;
 }
 function refreshLinks(blk){
   const ta=blk&&blk.querySelector('textarea.etext'); const box=blk&&blk.querySelector('.elnks');
@@ -744,7 +805,7 @@ function initInline(){
     let minH=90;
     if(empty && hasFiles){ minH=48; h=0; }
     ta.style.height='auto'; ta.style.height=Math.max(h, ta.scrollHeight+4, minH)+'px';
-    attachGrow(ta);
+    attachGrow(ta); histOf(ta);
   });
 }
 function lockRow(it){
@@ -769,13 +830,13 @@ function readHtml(it){
     return '<div class="body">'+ks.map(k=>{
       const v=it.f[k]||'', fl=it.f['a_'+k]||[];
       if(!v && !fl.length) return '';
-      return `<div class="fld ro">${v?`<div class="val"><div class="txt plain">${esc(v)}</div><button onclick="copyField('${it.id}','${k}')">Copier</button></div>`:''}${linksHtml(v)}${filesRo(fl)}</div>`;
+      return `<div class="fld ro">${v?lineRowsHtml(it.id,k,v):''}${linksHtml(v)}${filesRo(fl)}</div>`;
     }).join('')+'</div>';
   }
   const locked=itemLocked(it);
   return '<div class="body">'+itemFields(it).slice(1).map(([k,l])=>{
     const v=it.f[k]; if(!v) return '';
-    return `<div class="fld"><small>${esc(l)}</small><div class="val"><div class="txt plain">${esc(v)}</div><button onclick="copyField('${it.id}','${k}')">Copier</button></div></div>`;
+    return `<div class="fld"><small>${esc(l)}</small><div class="val"><div class="txt plain">${esc(v)}</div><button type="button" class="cpi" onclick="copyField('${it.id}','${k}')" aria-label="Copier">${IC_COPY}</button></div></div>`;
   }).join('')+(locked?'':`<div class="acts"><button onclick="editItem('${it.id}')">✏️ Modifier</button><button class="danger" onclick="askDelete('${it.id}')">Supprimer</button></div>`)+'</div>';
 }
 function detailHtml(it){
