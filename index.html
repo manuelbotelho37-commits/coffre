@@ -342,7 +342,7 @@ function renderSetup(){
     <div class="err" id="err"></div>
     <button class="primary" id="go" onclick="doSetup()">Créer mon coffre</button>
     <button class="gen" type="button" style="margin-top:18px" onclick="document.getElementById('restFile0').click()">♻️ J'ai déjà une sauvegarde : la restaurer</button>
-    <input type="file" id="restFile0" accept=".json,application/json" style="display:none" onchange="onRestoreFile(event)">
+    <input type="file" id="restFile0" style="display:none" onchange="onRestoreFile(event)">
   </div>`;
 }
 function renderLock(){
@@ -397,9 +397,17 @@ function renderMain(){
   <button class="fab" id="fab" onclick="editItem(null)">+ Ajouter</button>`;
   renderKeep(); renderWarn(); renderList();
 }
+function bkReminder(){
+  if(!items.length) return '';
+  const hasFiles=items.some(it=>filesOfItem(it).length>0);
+  const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
+  const last = hasFiles ? f : Math.max(f,l);
+  if(last && (Date.now()-last) < 30*24*3600*1000) return '';
+  return `<div class="warn" style="margin-top:12px">💾 Pense à faire une sauvegarde${hasFiles?' complète (avec tes photos)':''} : tout est gardé sur ce téléphone seulement.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
+}
 function renderWarn(){
   const el=$('#warnRow'); if(!el) return;
-  el.innerHTML = strongFlag ? '' : `<div class="warn" style="margin-top:12px">⚠️ Ton code actuel est trop court pour protéger des informations confidentielles.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="changePwForm()">Renforcer mon code maintenant</button></div>`;
+  el.innerHTML = bkReminder() + (strongFlag ? '' : `<div class="warn" style="margin-top:12px">⚠️ Ton code actuel est trop court pour protéger des informations confidentielles.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="changePwForm()">Renforcer mon code maintenant</button></div>`);
 }
 function renderChips(){
   const all=[['all','Tout']].concat(Object.keys(CATS).map(k=>[k, CATS[k].icon+' '+CATS[k].label]));
@@ -905,12 +913,20 @@ async function doDelete(id){
 }
 
 /* ---------- Réglages ---------- */
+function lastBkText(){
+  const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
+  const fm=t=>new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  if(!f && !l) return 'Aucune sauvegarde faite sur cet appareil.';
+  return (f?'Dernière sauvegarde complète : '+fm(f)+'. ':'')+(l?'Dernière sauvegarde légère : '+fm(l)+'.':'');
+}
 function openSettings(){
   openModal(`<h2>Réglages</h2>
+    <p style="color:var(--dim); font-size:.8rem; margin:4px 0 6px">${esc(lastBkText())}</p>
     <button class="setbtn" onclick="changePwForm()">🔑 Changer le code secret</button>
-    <button class="setbtn" onclick="doBackup()">💾 Télécharger une sauvegarde<small>Fichier chiffré : inutilisable sans ton code secret. Les photos et fichiers ne sont pas inclus.</small></button>
-    <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde</button>
-    <input type="file" id="restFile" accept=".json,application/json" style="display:none" onchange="onRestoreFile(event)">
+    <button class="setbtn" onclick="doBackupFull()">💾 Sauvegarde complète<small>Textes + photos + fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
+    <button class="setbtn" onclick="doBackup()">📝 Sauvegarde légère<small>Textes seulement : petit fichier, rapide.</small></button>
+    <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>Complète ou légère : l'appli reconnaît le fichier toute seule.</small></button>
+    <input type="file" id="restFile" style="display:none" onchange="onRestoreFile(event)">
     <button class="setbtn" onclick="closeModal()" style="margin-top:18px">Fermer</button>`);
 }
 function changePwForm(){
@@ -936,30 +952,61 @@ async function doChangePw(){
   closeModal(); await save(); if(keepExp){ try{ await kvSet('keep',{key,exp:keepExp}); }catch(e){} }
   renderWarn(); toast('✓ Code secret changé');
 }
+function dateTag(){ const d=new Date(); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
 async function doBackup(){
   try{
     const rec=await encryptRecord();
-    const d=new Date(); const name='coffre-sauvegarde-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';
-    await saveBlobAs(name, new Blob([JSON.stringify(rec)], {type:'application/json'}));
-    closeModal();
+    await saveBlobAs('coffre-sauvegarde-legere-'+dateTag()+'.json', new Blob([JSON.stringify(rec)], {type:'application/json'}));
+    try{ localStorage.setItem('coffre_lastbk', String(Date.now())); }catch(e){}
+    closeModal(); renderWarn();
   }catch(e){ if(!(e&&e.code==='declined')) toast('Échec de la sauvegarde'); }
 }
-function onRestoreFile(ev){
-  const f=ev.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{
-    try{
-      const rec=JSON.parse(r.result);
-      if(!rec.salt||!rec.iv||!rec.data) throw 0;
-      pendingRestore=rec;
-      openModal(`<h2>Restaurer la sauvegarde</h2>
-        <div class="warn">Le contenu actuel du coffre sera remplacé par celui de la sauvegarde.</div>
-        <label>Code secret de cette sauvegarde</label><input type="password" id="rp" autocapitalize="none">
-        <div class="err" id="err"></div>
-        <div class="row2" style="margin-top:14px"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="doRestore()">Restaurer</button></div>`);
-    }catch(e){ toast('Ce fichier n\'est pas une sauvegarde valide'); }
-  };
-  r.readAsText(f); ev.target.value='';
+async function doBackupFull(){
+  try{
+    toast('Préparation de la sauvegarde… patiente un instant');
+    const rec=await encryptRecord();
+    const entries=[], parts=[]; let off=0;
+    const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>ids.push(id)));
+    for(const id of ids){
+      const r=await fGet(id); if(!r) continue;
+      const ct=new Uint8Array(r.ct);
+      entries.push({id, iv:b64(r.iv), k:(r.k?1:0), off, len:ct.length});
+      parts.push(ct); off+=ct.length;
+    }
+    const header=new TextEncoder().encode(JSON.stringify({v:2, record:rec, files:entries}));
+    const lenBuf=new Uint8Array(4); new DataView(lenBuf.buffer).setUint32(0, header.length);
+    const magic=new TextEncoder().encode('COFFRE2\n');
+    const blob=new Blob([magic, lenBuf, header].concat(parts), {type:'application/octet-stream'});
+    await saveBlobAs('coffre-sauvegarde-complete-'+dateTag()+'.coffre', blob);
+    try{ localStorage.setItem('coffre_lastfull', String(Date.now())); localStorage.setItem('coffre_lastbk', String(Date.now())); }catch(e){}
+    closeModal(); renderWarn();
+    toast('✓ Sauvegarde complète : '+entries.length+' fichier(s) inclus');
+  }catch(e){ if(!(e&&e.code==='declined')) toast('Échec de la sauvegarde complète'); }
+}
+let pendingFull=null;
+function restoreModal(){
+  openModal(`<h2>Restaurer la sauvegarde</h2>
+    <div class="warn">Le contenu actuel du coffre sera remplacé par celui de la sauvegarde.</div>
+    <label>Code secret de cette sauvegarde</label><input type="password" id="rp" autocapitalize="none">
+    <div class="err" id="err"></div>
+    <div class="row2" style="margin-top:14px"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="doRestore()">Restaurer</button></div>`);
+}
+async function onRestoreFile(ev){
+  const f=ev.target.files[0]; ev.target.value=''; if(!f) return;
+  pendingFull=null;
+  try{
+    const head=new TextDecoder().decode(new Uint8Array(await f.slice(0,8).arrayBuffer()));
+    if(head==='COFFRE2\n'){
+      const len=new DataView(await f.slice(8,12).arrayBuffer()).getUint32(0);
+      const h=JSON.parse(new TextDecoder().decode(new Uint8Array(await f.slice(12,12+len).arrayBuffer())));
+      if(!h.record||!h.record.salt||!h.record.iv||!h.record.data) throw 0;
+      pendingRestore=h.record; pendingFull={file:f, base:12+len, files:h.files||[]};
+      restoreModal(); return;
+    }
+    const rec=JSON.parse(await f.text());
+    if(!rec.salt||!rec.iv||!rec.data) throw 0;
+    pendingRestore=rec; restoreModal();
+  }catch(e){ toast('Ce fichier n\'est pas une sauvegarde valide'); }
 }
 async function doRestore(){
   const p=$('#rp').value; if(!p||!pendingRestore) return;
@@ -967,6 +1014,13 @@ async function doRestore(){
     const s=unb64(pendingRestore.salt), it=pendingRestore.it||310000, k=await deriveKey(normCode(p), s, it);
     items=await decryptRecord(pendingRestore, k); key=k; salt=s; iters=it; strongFlag=!!pendingRestore.s; pendingRestore=null;
     try{ await initDataKey(); }catch(e){}
+    if(pendingFull){
+      toast('Remise des photos et fichiers…');
+      const pf=pendingFull; pendingFull=null;
+      for(const e of pf.files){
+        try{ const ct=await pf.file.slice(pf.base+e.off, pf.base+e.off+e.len).arrayBuffer(); await fPut(e.id,{iv:unb64(e.iv), ct, k:(e.k?1:0)}); }catch(x){}
+      }
+    }
     closeModal(); openId=null; renderMain(); await save(); if(keepExp){ try{ await kvSet('keep',{key,exp:keepExp}); }catch(e){} }
   }catch(e){ setErr('Code incorrect pour cette sauvegarde.'); }
 }
