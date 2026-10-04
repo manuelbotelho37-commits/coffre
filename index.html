@@ -99,6 +99,7 @@
   .ltx{flex:1; min-width:0; word-break:break-word; font-size:1.02rem; white-space:pre-wrap;}
   .cpi{width:42px; height:36px; padding:0; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--brass); background:#2a2518; color:#e3bd68;}
   .cpi.all{border-color:var(--line); background:var(--surface2); color:var(--text);}
+  .cpg{display:flex; gap:6px; flex:none;}
   .cpi svg, .fbtns .undo svg{width:20px; height:20px; display:block;}
   .fbtns .undo{width:44px; height:34px; padding:0; display:flex; align-items:center; justify-content:center; border:1px solid var(--brass); background:#2a2518; color:#e3bd68;}
   .fbtns .gen{margin:0; padding:6px 10px; font-size:.76rem; border-radius:8px; white-space:nowrap;}
@@ -319,8 +320,12 @@ function smartValue(line){
   if(/^[\d ]+$/.test(t) && /^\d{13,19}$/.test(t.replace(/\s/g,''))) return t.replace(/\s/g,'');
   let m = t.match(/^([^:：]*[A-Za-zÀ-ÿ][^:：]{0,22}?)\s*[:：]\s+(\S.*)$/);
   if(m) return m[2].trim();
-  m = t.match(/^(pin|code|mdp|mot de passe|password|identifiant|login|id|cvv|cvc|crypto|cryptogramme|iban|bic|n°|numéro|num|tel|tél|email|mail)(?=[\s:\-])\s*[:\-]?\s*(\S.*)$/i);
-  if(m) return m[2].trim();
+  const toks = t.split(/\s+/);
+  const i = toks.findIndex(x=>/\d/.test(x));
+  if(i > 0){
+    const val = toks.slice(i).join(' ');
+    if(toks.length - i <= 3 && val.length <= 22) return val;
+  }
   return t;
 }
 function lineRowsHtml(id,k,v){
@@ -329,9 +334,10 @@ function lineRowsHtml(id,k,v){
   return '<div class="lrows">' + lines.map((l,i)=>{
     if(l.trim()==='') return '';
     const all = (i===idx[0] && idx.length>1);
+    const one = `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
     const btn = all
-      ? `<button type="button" class="cpi all" onclick="copyField('${id}','${k}')" aria-label="Tout copier">${IC_ALL}</button>`
-      : `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
+      ? `<div class="cpg"><button type="button" class="cpi all" onclick="copyField('${id}','${k}')" aria-label="Tout copier">${IC_ALL}</button>${one}</div>`
+      : one;
     return `<div class="lrow"><div class="ltx">${esc(l)}</div>${btn}</div>`;
   }).join('') + '</div>';
 }
