@@ -105,6 +105,10 @@
   .fname small{display:block; color:var(--dim); font-size:.75rem; margin-top:2px;}
   .ren2{padding:7px 12px; font-size:.82rem;}
   .xdel2{padding:7px 12px; font-size:.82rem; color:var(--red); border-color:#5a2f2b;}
+  .lnks{margin-top:8px;}
+  .lnk{display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 0; border-top:1px solid var(--line);}
+  .lnk .lu{flex:1 1 100%; color:var(--brass); font-size:.8rem; word-break:break-all;}
+  .lnk button{padding:8px 14px; font-size:.84rem;}
   .frow.ro{cursor:default;}
   .frow.ro .fthumb{cursor:default; pointer-events:none;}
   .fopen{color:var(--dim); font-size:.85rem; padding-right:4px;}
@@ -296,15 +300,25 @@ function genPassword(){
   for(let i=0;i<16;i++) s+=set[a[i]%set.length];
   return s;
 }
-async function copyText(t){
+async function copyText(t, keep){
   try{ await navigator.clipboard.writeText(t); }
   catch(e){
     const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
     document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(x){} ta.remove();
   }
-  toast('Copié (effacé du presse-papiers dans 30 s)');
-  setTimeout(()=>{ try{navigator.clipboard.writeText(' ');}catch(e){} }, 30000);
+  toast(keep ? '✓ Lien copié' : 'Copié (effacé du presse-papiers dans 30 s)');
+  if(!keep) setTimeout(()=>{ try{navigator.clipboard.writeText(' ');}catch(e){} }, 30000);
 }
+function extractLinks(t){
+  const m=(t||'').match(/https?:\/\/[^\s<>"']+/g)||[]; const out=[];
+  m.forEach(u=>{ u=u.replace(/[.,;:!?)\]]+$/,''); if(u && out.indexOf(u)<0) out.push(u); });
+  return out;
+}
+function linksHtml(t){
+  const L=extractLinks(t); if(!L.length) return '';
+  return '<div class="lnks">'+L.map(u=>`<div class="lnk"><span class="lu">${esc(u)}</span><button type="button" data-u="${esc(u)}" onclick="copyText(this.dataset.u,true)">📋 Copier</button><button type="button" data-u="${esc(u)}" onclick="openLink(this.dataset.u)">↗ Ouvrir</button></div>`).join('')+'</div>';
+}
+function openLink(u){ const w=window.open(u,'_blank','noopener'); if(!w){ location.href=u; } }
 
 /* ---------- Verrouillage automatique ---------- */
 function resetTimer(){
@@ -744,7 +758,7 @@ function readHtml(it){
     return '<div class="body">'+ks.map(k=>{
       const v=it.f[k]||'', fl=it.f['a_'+k]||[];
       if(!v && !fl.length) return '';
-      return `<div class="fld ro">${v?`<div class="val"><div class="txt plain">${esc(v)}</div><button onclick="copyField('${it.id}','${k}')">Copier</button></div>`:''}${filesRo(fl)}</div>`;
+      return `<div class="fld ro">${v?`<div class="val"><div class="txt plain">${esc(v)}</div><button onclick="copyField('${it.id}','${k}')">Copier</button></div>`:''}${linksHtml(v)}${filesRo(fl)}</div>`;
     }).join('')+'</div>';
   }
   const locked=itemLocked(it);
