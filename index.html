@@ -198,7 +198,12 @@ let strongFlag=false, lkT=null;
 let dkey=null, fkB64='', lastFk=null;
 function codeProblem(v){
   v=normCode(v);
-  if(/^\d+$/.test(v)){ if(v.length<12) return 'Avec des chiffres seulement, il en faut au moins 12.'; }
+  if(/^\d+$/.test(v)){
+    if(v.length<6) return 'Avec des chiffres seulement, il en faut au moins 6.';
+    if(new Set(v).size<3) return 'Ce code est trop simple : utilise des chiffres variés.';
+    if('01234567890'.includes(v) || '09876543210'.includes(v)) return 'Ce code est trop simple : évite les suites comme 123456.';
+    return '';
+  }
   else {
     const types=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(v)).length;
     if(v.length<10 || (types<2 && v.length<16)) return 'Il faut au moins 10 caractères, avec des lettres ET des chiffres.';
@@ -214,9 +219,11 @@ function codeHint(v){
   el.textContent = p || '✓ Code solide';
 }
 function genCode(){
-  const a=crypto.getRandomValues(new Uint32Array(12)); let d='';
-  for(let i=0;i<12;i++) d+=String(a[i]%10);
-  const g=d.slice(0,4)+' '+d.slice(4,8)+' '+d.slice(8,12);
+  let g='';
+  do{ const a=crypto.getRandomValues(new Uint32Array(6)); let d='';
+    for(let i=0;i<6;i++) d+=String(a[i]%10);
+    g=d.slice(0,3)+' '+d.slice(3,6);
+  }while(codeProblem(g));
   ['p1','p2','n1','n2'].forEach(id=>{ const e=$('#'+id); if(e){ e.type='text'; e.value=g; } });
   codeHint(g);
   const m=$('#genmsg'); if(m) m.textContent='Note ce code sur papier MAINTENANT, avant de continuer.';
@@ -390,14 +397,14 @@ async function lock(){
 function renderSetup(){
   $('#app').innerHTML = `<div class="center">
     <div class="big">🔐</div><h1>Ton coffre</h1>
-    <p>Choisis un <b>code secret solide</b> : 12 chiffres, ou 10 caractères avec lettres et chiffres. C'est le seul que tu devras retenir.</p>
+    <p>Choisis un <b>code secret</b> : 6 chiffres, ou 10 caractères avec lettres et chiffres. C'est le seul que tu devras retenir.</p>
     <div class="warn">⚠️ Si tu l'oublies, personne ne peut le retrouver, pas même moi. Note-le sur papier et range-le chez toi.</div>
     <label>Code secret</label>
     <input type="password" id="p1" autocomplete="new-password" autocapitalize="none" oninput="codeHint(this.value)">
     <div id="hint" style="text-align:left; font-size:.84rem; margin-top:6px; min-height:1.2em"></div>
     <label>Retape-le pour confirmer</label>
     <input type="password" id="p2" autocomplete="new-password" autocapitalize="none">
-    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code solide (12 chiffres)</button>
+    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code (6 chiffres)</button>
     <div id="genmsg" style="color:var(--brass); font-size:.84rem; margin-top:8px; text-align:left"></div>
     <div class="err" id="err"></div>
     <button class="primary" id="go" onclick="doSetup()">Créer mon coffre</button>
@@ -1022,12 +1029,12 @@ function openSettings(){
 }
 function changePwForm(){
   openModal(`<h2>Nouveau code secret</h2>
-    <div class="warn">Solide : 12 chiffres, ou 10 caractères avec lettres et chiffres. Si tu l'oublies, il ne peut pas être récupéré : note-le sur papier.</div>
+    <div class="warn">6 chiffres, ou 10 caractères avec lettres et chiffres. Si tu l'oublies, il ne peut pas être récupéré : note-le sur papier.</div>
     <label>Code actuel</label><input type="password" id="n0" autocomplete="current-password" autocapitalize="none">
     <label>Nouveau code</label><input type="password" id="n1" autocomplete="new-password" autocapitalize="none" oninput="codeHint(this.value)">
     <div id="hint" style="font-size:.84rem; margin-top:6px; min-height:1.2em"></div>
     <label>Retape-le</label><input type="password" id="n2" autocomplete="new-password" autocapitalize="none">
-    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code solide (12 chiffres)</button>
+    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code (6 chiffres)</button>
     <div id="genmsg" style="color:var(--brass); font-size:.84rem; margin-top:8px"></div>
     <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
     <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="doChangePw()">Changer</button></div></div>`);
