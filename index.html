@@ -96,6 +96,15 @@
   .lrows{width:100%;}
   .lrow{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line);}
   .lrow:first-child{border-top:none;}
+  .selrow{cursor:pointer; justify-content:flex-start;}
+  .selrow .sbox{flex:none; width:26px; height:26px; border-radius:7px; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; color:#14181d; font-weight:700;}
+  .selrow.on .sbox{background:var(--brass); border-color:var(--brass);}
+  .selrow.on .ltx{color:#e3bd68;}
+  .selgo{margin-top:14px; width:100%;}
+  .selbar{position:sticky; bottom:0; margin-top:14px; padding:12px; border:1px solid var(--brass); border-radius:12px; background:var(--surface,#1b2027); z-index:5;}
+  .selhint{font-size:.9rem; margin-bottom:8px; color:#e3bd68;}
+  .selbtns{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .selbtns button{margin:0; padding:10px 6px; font-size:.9rem;}
   .ltx{flex:1; min-width:0; word-break:break-word; font-size:1.02rem; white-space:pre-wrap;}
   .cpi{width:42px; height:36px; padding:0; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--brass); background:#2a2518; color:#e3bd68;}
   .cpi.all{border-color:var(--line); background:var(--surface2); color:var(--text);}
@@ -335,13 +344,82 @@ function smartValue(line){
   }
   return t;
 }
+/* --- boutons copier choisis : groupes de lignes / sans bouton --- */
+let selId=null, sel=new Set();
+function cpxOf(it){ const c=it.cpx||{}; return {g:(c.g||[]).map(x=>x.slice()), n:(c.n||[]).slice()}; }
+function groupAt(lines,i,G){
+  // renvoie l'index de fin si le groupe G commence à la ligne i
+  let j=i, m=0;
+  while(j<lines.length && m<G.length){
+    const t=lines[j].trim();
+    if(t===''){ j++; continue; }
+    if(t!==G[m]) return -1;
+    m++; j++;
+  }
+  return m===G.length ? j-1 : -1;
+}
 function lineRowsHtml(id,k,v){
+  const it=items.find(x=>x.id===id); const c=it?cpxOf(it):{g:[],n:[]};
   const lines = String(v).split('\n');
-  return '<div class="lrows">' + lines.map((l,i)=>{
-    if(l.trim()==='') return '';
-    const btn = `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
-    return `<div class="lrow"><div class="ltx">${esc(l)}</div>${btn}</div>`;
-  }).join('') + '</div>';
+  if(selId===id){
+    return '<div class="lrows">' + lines.map((l,i)=>{
+      if(l.trim()==='') return '';
+      const on=sel.has(k+'|'+i);
+      return `<div class="lrow selrow${on?' on':''}" onclick="selToggle('${k}',${i})"><span class="sbox">${on?'✓':''}</span><div class="ltx">${esc(l)}</div></div>`;
+    }).join('') + '</div>';
+  }
+  const off=new Set(c.n); let out='';
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i]; if(l.trim()==='') continue;
+    let end=-1;
+    for(const G of c.g){ if(G.length>1){ end=groupAt(lines,i,G); if(end>=0) break; } }
+    if(end>=0){
+      const txt=lines.slice(i,end+1).filter(x=>x.trim()!=='').map(esc).join('<br>');
+      out+=`<div class="lrow grp"><div class="ltx">${txt}</div><button type="button" class="cpi" onclick="copyGroup('${id}','${k}',${i},${end})" aria-label="Copier ces lignes">${IC_COPY}</button></div>`;
+      i=end; continue;
+    }
+    const btn = off.has(l.trim()) ? '' : `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
+    out+=`<div class="lrow"><div class="ltx">${esc(l)}</div>${btn}</div>`;
+  }
+  return '<div class="lrows">'+out+'</div>';
+}
+function copyGroup(id,k,a,b){
+  const it=items.find(x=>x.id===id); if(!it) return;
+  const L=String(it.f[k]||'').split('\n').slice(a,b+1).filter(x=>x.trim()!=='').map(x=>x.replace(/^\s*[•*–-]\s*/,'').trim());
+  copyText(L.join('\n'));
+}
+function selStart(id){ selId=id; sel=new Set(); renderList(); }
+function selEnd(){ selId=null; sel=new Set(); renderList(); }
+function selToggle(k,i){ const key=k+'|'+i; sel.has(key)?sel.delete(key):sel.add(key); renderList(); }
+async function selApply(mode){
+  const it=items.find(x=>x.id===selId); if(!it) return;
+  if(!sel.size){ toast('Touche d\'abord des lignes'); return; }
+  const keys=[...sel].map(x=>{ const [k,i]=x.split('|'); return {k,i:+i}; });
+  const ks=new Set(keys.map(x=>x.k));
+  const chosen=keys.map(x=>({k:x.k,i:x.i,t:String(it.f[x.k]||'').split('\n')[x.i].trim()})).sort((a,b)=>a.i-b.i);
+  if(mode==='g' && chosen.length>1){
+    if(ks.size>1){ toast('Choisis des lignes du même onglet'); return; }
+    const lines=String(it.f[chosen[0].k]||'').split('\n');
+    for(let j=chosen[0].i;j<=chosen[chosen.length-1].i;j++){ if(lines[j].trim()!=='' && !sel.has(chosen[0].k+'|'+j)){ toast('Choisis des lignes qui se suivent'); return; } }
+  }
+  const T=new Set(chosen.map(x=>x.t));
+  const c=cpxOf(it);
+  c.g=c.g.filter(G=>!G.some(t=>T.has(t)));
+  c.n=c.n.filter(t=>!T.has(t));
+  if(mode==='g' && chosen.length>1) c.g.push(chosen.map(x=>x.t));
+  if(mode==='n') chosen.forEach(x=>c.n.push(x.t));
+  it.cpx=c;
+  selId=null; sel=new Set(); renderList();
+  toast(mode==='g' ? (chosen.length>1?'✓ Un seul bouton pour ces lignes':'✓ Un bouton pour cette ligne') : mode==='n' ? '✓ Bouton copier enlevé' : '✓ Un bouton par ligne');
+  await save(true);
+}
+function selBarHtml(it){
+  if(selId!==it.id) return `<button type="button" class="gen selgo" onclick="selStart('${it.id}')">☑️ Choisir les boutons copier</button>`;
+  return `<div class="selbar"><div class="selhint">${sel.size ? sel.size+' ligne(s) choisie(s)' : 'Touche les lignes à choisir'}</div>
+    <div class="selbtns"><button type="button" class="primary" onclick="selApply('g')">1 copier pour ces lignes</button>
+    <button type="button" onclick="selApply('n')">Sans copier</button>
+    <button type="button" onclick="selApply('l')">1 copier par ligne</button>
+    <button type="button" onclick="selEnd()">Terminé</button></div></div>`;
 }
 function copyLine(id,k,i){
   const it = items.find(x=>x.id===id); if(!it) return;
@@ -839,7 +917,7 @@ function readHtml(it){
       const v=it.f[k]||'', fl=it.f['a_'+k]||[];
       if(!v && !fl.length) return '';
       return `<div class="fld ro">${v?lineRowsHtml(it.id,k,v):''}${linksHtml(v)}${filesRo(fl)}</div>`;
-    }).join('')+'</div>';
+    }).join('')+selBarHtml(it)+'</div>';
   }
   const locked=itemLocked(it);
   return '<div class="body">'+itemFields(it).slice(1).map(([k,l])=>{
@@ -857,12 +935,12 @@ function detailHtml(it){
 async function toggleLock(id){
   const it=items.find(x=>x.id===id); if(!it) return;
   collectOpenInline();
-  it.locked = !itemLocked(it);
+  it.locked = !itemLocked(it); selId=null;
   renderList();
   await save(true);
 }
 async function toggle(id){
-  clearTimeout(edT);
+  clearTimeout(edT); selId=null;
   collectOpenInline();
   const prev=openId; let changed=false;
   const lockIt=pid=>{ const p=items.find(x=>x.id===pid); if(p && !itemLocked(p)){ p.locked=true; changed=true; } };
