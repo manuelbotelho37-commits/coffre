@@ -337,14 +337,9 @@ function smartValue(line){
 }
 function lineRowsHtml(id,k,v){
   const lines = String(v).split('\n');
-  const idx = []; lines.forEach((l,i)=>{ if(l.trim()!=='') idx.push(i); });
   return '<div class="lrows">' + lines.map((l,i)=>{
     if(l.trim()==='') return '';
-    const all = (i===idx[0] && idx.length>1);
-    const one = `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
-    const btn = all
-      ? `<div class="cpg"><button type="button" class="cpi all" onclick="copyField('${id}','${k}')" aria-label="Tout copier">${IC_ALL}</button>${one}</div>`
-      : one;
+    const btn = `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
     return `<div class="lrow"><div class="ltx">${esc(l)}</div>${btn}</div>`;
   }).join('') + '</div>';
 }
