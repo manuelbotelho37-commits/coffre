@@ -1140,6 +1140,8 @@ async function doRestore(){
   } else renderSetup();
 })();
 </script>
-<script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }</script>
+<script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){}); });
+  var hadSW=!!navigator.serviceWorker.controller, reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){ if(hadSW && !reloaded && document.getElementById('pw')){ reloaded=true; location.reload(); } }); }</script>
 </body>
 </html>
