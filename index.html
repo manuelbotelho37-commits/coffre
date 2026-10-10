@@ -346,13 +346,15 @@ function smartValue(line){
 }
 /* --- boutons copier choisis : groupes de lignes / sans bouton --- */
 let selId=null, sel=new Set();
-function cpxOf(it){ const c=it.cpx||{}; return {g:(c.g||[]).map(x=>x.slice()), n:(c.n||[]).slice()}; }
+const cpT = l => String(l||'').replace(/[\u200b-\u200f\u2060\ufeff]/g,'').trim();
+const cpBlank = l => /^[\s•]*$/.test(cpT(l));
+function cpxOf(it){ const c=it.cpx||{}; return {g:(c.g||[]).map(x=>x.slice())}; }
 function groupAt(lines,i,G){
   // renvoie l'index de fin si le groupe G commence à la ligne i
   let j=i, m=0;
   while(j<lines.length && m<G.length){
-    const t=lines[j].trim();
-    if(t===''){ j++; continue; }
+    const t=cpT(lines[j]);
+    if(cpBlank(lines[j])){ j++; continue; }
     if(t!==G[m]) return -1;
     m++; j++;
   }
@@ -363,29 +365,29 @@ function lineRowsHtml(id,k,v){
   const lines = String(v).split('\n');
   if(selId===id){
     return '<div class="lrows">' + lines.map((l,i)=>{
-      if(l.trim()==='') return '';
+      if(cpBlank(l)) return '';
       const on=sel.has(k+'|'+i);
       return `<div class="lrow selrow${on?' on':''}" onclick="selToggle('${k}',${i})"><span class="sbox">${on?'✓':''}</span><div class="ltx">${esc(l)}</div></div>`;
     }).join('') + '</div>';
   }
-  const off=new Set(c.n); let out='';
+  // par défaut : aucun bouton copier ; seuls les groupes choisis en ont un
+  let out='';
   for(let i=0;i<lines.length;i++){
-    const l=lines[i]; if(l.trim()==='') continue;
+    const l=lines[i]; if(cpBlank(l)) continue;
     let end=-1;
-    for(const G of c.g){ if(G.length>1){ end=groupAt(lines,i,G); if(end>=0) break; } }
+    for(const G of c.g){ end=groupAt(lines,i,G); if(end>=0) break; }
     if(end>=0){
-      const txt=lines.slice(i,end+1).filter(x=>x.trim()!=='').map(esc).join('<br>');
-      out+=`<div class="lrow grp"><div class="ltx">${txt}</div><button type="button" class="cpi" onclick="copyGroup('${id}','${k}',${i},${end})" aria-label="Copier ces lignes">${IC_COPY}</button></div>`;
+      const txt=lines.slice(i,end+1).filter(x=>!cpBlank(x)).map(esc).join('<br>');
+      out+=`<div class="lrow${end>i?' grp':''}"><div class="ltx">${txt}</div><button type="button" class="cpi" onclick="copyGroup('${id}','${k}',${i},${end})" aria-label="Copier">${IC_COPY}</button></div>`;
       i=end; continue;
     }
-    const btn = off.has(l.trim()) ? '' : `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
-    out+=`<div class="lrow"><div class="ltx">${esc(l)}</div>${btn}</div>`;
+    out+=`<div class="lrow"><div class="ltx">${esc(l)}</div></div>`;
   }
   return '<div class="lrows">'+out+'</div>';
 }
 function copyGroup(id,k,a,b){
   const it=items.find(x=>x.id===id); if(!it) return;
-  const L=String(it.f[k]||'').split('\n').slice(a,b+1).filter(x=>x.trim()!=='').map(x=>x.replace(/^\s*[•*–-]\s*/,'').trim());
+  const L=String(it.f[k]||'').split('\n').slice(a,b+1).filter(x=>!cpBlank(x)).map(x=>x.replace(/^\s*[•*–-]\s*/,'').trim());
   copyText(L.join('\n'));
 }
 function selStart(id){ selId=id; sel=new Set(); renderList(); }
@@ -396,29 +398,28 @@ async function selApply(mode){
   if(!sel.size){ toast('Touche d\'abord des lignes'); return; }
   const keys=[...sel].map(x=>{ const [k,i]=x.split('|'); return {k,i:+i}; });
   const ks=new Set(keys.map(x=>x.k));
-  const chosen=keys.map(x=>({k:x.k,i:x.i,t:String(it.f[x.k]||'').split('\n')[x.i].trim()})).sort((a,b)=>a.i-b.i);
+  const chosen=keys.map(x=>({k:x.k,i:x.i,t:cpT(String(it.f[x.k]||'').split('\n')[x.i])})).sort((a,b)=>a.i-b.i);
   if(mode==='g' && chosen.length>1){
     if(ks.size>1){ toast('Choisis des lignes du même onglet'); return; }
     const lines=String(it.f[chosen[0].k]||'').split('\n');
-    for(let j=chosen[0].i;j<=chosen[chosen.length-1].i;j++){ if(lines[j].trim()!=='' && !sel.has(chosen[0].k+'|'+j)){ toast('Choisis des lignes qui se suivent'); return; } }
+    for(let j=chosen[0].i;j<=chosen[chosen.length-1].i;j++){ if(!cpBlank(lines[j]) && !sel.has(chosen[0].k+'|'+j)){ toast('Choisis des lignes qui se suivent'); return; } }
   }
   const T=new Set(chosen.map(x=>x.t));
   const c=cpxOf(it);
   c.g=c.g.filter(G=>!G.some(t=>T.has(t)));
-  c.n=c.n.filter(t=>!T.has(t));
-  if(mode==='g' && chosen.length>1) c.g.push(chosen.map(x=>x.t));
-  if(mode==='n') chosen.forEach(x=>c.n.push(x.t));
+  if(mode==='g') c.g.push(chosen.map(x=>x.t));
+  if(mode==='l') chosen.forEach(x=>c.g.push([x.t]));
   it.cpx=c;
   selId=null; sel=new Set(); renderList();
-  toast(mode==='g' ? (chosen.length>1?'✓ Un seul bouton pour ces lignes':'✓ Un bouton pour cette ligne') : mode==='n' ? '✓ Bouton copier enlevé' : '✓ Un bouton par ligne');
   await save(true);
+  toast(mode==='g' ? (chosen.length>1?'✓ Un bouton copier pour ces lignes':'✓ Bouton copier ajouté') : mode==='n' ? '✓ Bouton copier enlevé' : '✓ Un bouton sur chaque ligne');
 }
 function selBarHtml(it){
-  if(selId!==it.id) return `<button type="button" class="gen selgo" onclick="selStart('${it.id}')">☑️ Choisir les boutons copier</button>`;
+  if(selId!==it.id) return `<button type="button" class="gen selgo" onclick="selStart('${it.id}')">☑️ Ajouter / enlever des boutons copier</button>`;
   return `<div class="selbar"><div class="selhint">${sel.size ? sel.size+' ligne(s) choisie(s)' : 'Touche les lignes à choisir'}</div>
     <div class="selbtns"><button type="button" class="primary" onclick="selApply('g')">1 copier pour ces lignes</button>
-    <button type="button" onclick="selApply('n')">Sans copier</button>
-    <button type="button" onclick="selApply('l')">1 copier par ligne</button>
+    <button type="button" onclick="selApply('l')">1 copier sur chaque ligne</button>
+    <button type="button" onclick="selApply('n')">Enlever le copier</button>
     <button type="button" onclick="selEnd()">Terminé</button></div></div>`;
 }
 function copyLine(id,k,i){
