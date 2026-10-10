@@ -392,10 +392,13 @@ function copyGroup(id,k,a,b){
   copyText(L.map(x=>x.replace(/^\s*[•*–-]\s*/,'').trim()).join('\n'));
 }
 function selStart(id){ selId=id; sel=new Set(); renderList(); }
-function selEnd(){ selId=null; sel=new Set(); renderList(); }
+function selEnd(){ selId=null; sel=new Set(); renderList(); toast('Rien n\'a été changé'); }
 function selToggle(k,i){ const key=k+'|'+i; sel.has(key)?sel.delete(key):sel.add(key); renderList(); }
 async function selApply(mode){
-  const it=items.find(x=>x.id===selId); if(!it) return;
+  try{ await selApply0(mode); }catch(e){ toast('⚠️ Erreur : '+(e&&e.message||e)); }
+}
+async function selApply0(mode){
+  const it=items.find(x=>x.id===selId); if(!it){ toast('⚠️ Note introuvable'); return; }
   if(!sel.size){ toast('Touche d\'abord des lignes'); return; }
   const keys=[...sel].map(x=>{ const [k,i]=x.split('|'); return {k,i:+i}; });
   const ks=new Set(keys.map(x=>x.k));
@@ -418,10 +421,10 @@ async function selApply(mode){
 function selBarHtml(it){
   if(selId!==it.id) return `<button type="button" class="gen selgo" onclick="selStart('${it.id}')">☑️ Ajouter / enlever des boutons copier</button>`;
   return `<div class="selbar"><div class="selhint">${sel.size ? sel.size+' ligne(s) choisie(s)' : 'Touche les lignes à choisir'}</div>
-    <div class="selbtns"><button type="button" class="primary" onclick="selApply('g')">1 copier pour ces lignes</button>
+    <div class="selbtns"><button type="button" class="primary" onclick="selApply('g')">✓ Valider : 1 copier pour ces lignes</button>
     <button type="button" onclick="selApply('l')">1 copier sur chaque ligne</button>
     <button type="button" onclick="selApply('n')">Enlever le copier</button>
-    <button type="button" onclick="selEnd()">Terminé</button></div></div>`;
+    <button type="button" onclick="selEnd()">Annuler</button></div></div>`;
 }
 function copyLine(id,k,i){
   const it = items.find(x=>x.id===id); if(!it) return;
