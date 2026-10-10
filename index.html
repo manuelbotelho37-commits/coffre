@@ -84,6 +84,9 @@
   #detailwrap .body{padding:0 0 40px; border-top:none;}
   .blk{border:1px solid var(--line); border-radius:10px; background:var(--surface2); overflow:hidden;}
   .blk textarea.hid{display:none;}
+  .cpch{display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 10px 8px; font-size:.85rem; color:var(--muted,#9aa3ad);}
+  .cpch button{padding:5px 10px; border-radius:16px; border:1px solid var(--line); background:transparent; color:inherit; font-size:.85rem; margin:0; width:auto;}
+  .cpch button.on{border-color:var(--brass); color:#e3bd68; background:#2a2518;}
   .xblk.fonly .xdel{display:none;}
   .blk.fonly .fl{padding-top:0;}
   .fld.ro{border:1px solid var(--line); border-radius:10px; background:var(--surface2); padding:6px 12px; margin-top:12px;}
@@ -335,7 +338,9 @@ function smartValue(line){
   }
   return t;
 }
-function lineRowsHtml(id,k,v){
+function lineRowsHtml(id,k,v,mode){
+  if(mode==='n') return `<div class="lrows"><div class="lrow"><div class="ltx">${esc(String(v))}</div></div></div>`;
+  if(mode==='b') return `<div class="lrows"><div class="lrow"><div class="ltx">${esc(String(v))}</div><button type="button" class="cpi" onclick="copyField('${id}','${k}')" aria-label="Tout copier">${IC_COPY}</button></div></div>`;
   const lines = String(v).split('\n');
   return '<div class="lrows">' + lines.map((l,i)=>{
     if(l.trim()==='') return '';
@@ -697,8 +702,9 @@ function collectInline(id){
   let n=0;
   Array.from(box.querySelectorAll('.blk')).forEach((b,i)=>{
     const ta=b.querySelector('textarea.etext'); const v=cleanTxt(ta.value); const fl=getFiles(b);
-    if(i===0){ f.text=v; f.h_text=ta.offsetHeight; if(fl.length) f.a_text=fl; }
-    else if(v||fl.length){ f['m'+n]=v; f['h_m'+n]=ta.offsetHeight; if(fl.length) f['a_m'+n]=fl; n++; }
+    const cp=b.dataset.cp; const ck=(i===0)?'text':'m'+n;
+    if(i===0){ f.text=v; f.h_text=ta.offsetHeight; if(fl.length) f.a_text=fl; if(cp&&cp!=='l') f.c_text=cp; }
+    else if(v||fl.length){ f['m'+n]=v; f['h_m'+n]=ta.offsetHeight; if(fl.length) f['a_m'+n]=fl; if(cp&&cp!=='l') f['c_'+ck]=cp; n++; }
   });
   it.f=f;
   const dt=document.querySelector('.dtitle'); if(dt) dt.textContent=f.name;
@@ -712,10 +718,16 @@ function inlineChanged(){
   clearTimeout(edT);
   edT=setTimeout(async()=>{ collectOpenInline(); try{ await save(true); }catch(e){} }, 900);
 }
-function blockHtml(k,text,fl,extra){
+function cpChips(cp){
+  const o=[['l','Chaque ligne'],['b','Tout le bloc'],['n','Aucun']];
+  return `<div class="cpch"><span>Bouton copier :</span>${o.map(([v,l])=>`<button type="button" class="${(cp||'l')===v?'on':''}" onclick="setCp(this,'${v}')">${l}</button>`).join('')}</div>`;
+}
+function setCp(btn,v){ const b=btn.closest('.blk'); b.dataset.cp=v; b.querySelectorAll('.cpch button').forEach(x=>x.classList.toggle('on',x===btn)); inlineChanged(); }
+function blockHtml(k,text,fl,extra,cp){
   const hide = !(text||'').trim() && (fl||[]).length>0;
-  return `<div class="blk${extra?' xblk':''}${hide?' fonly':''}" data-files="${esc(JSON.stringify(fl||[]))}">
+  return `<div class="blk${extra?' xblk':''}${hide?' fonly':''}" data-cp="${cp||'l'}" data-files="${esc(JSON.stringify(fl||[]))}">
     <textarea class="etext${extra?' xpad':''}${hide?' hid':''}"${k?` data-k="${k}"`:''} oninput="inlineChanged()">${esc(text||'')}</textarea>
+    ${cpChips(cp)}
     <div class="lnks elnks">${linksHtml(text)}</div>
     ${extra?'<button type="button" class="xdel" onclick="askDelExtra(this)">Supprimer</button>':''}
     <div class="fl">${fileRowsEdit(fl||[])}</div>
@@ -785,15 +797,15 @@ function toggleBullets(btn){
 function splitFiles(it){
   if(it.cat!=='other') return false;
   const ks=['text'].concat(extraKeys(it));
-  const blocks=ks.map(k=>({t:it.f[k]||'', a:(it.f['a_'+k]||[]).slice(), h:it.f['h_'+k]}));
+  const blocks=ks.map(k=>({t:it.f[k]||'', a:(it.f['a_'+k]||[]).slice(), h:it.f['h_'+k], c:it.f['c_'+k]}));
   if(!blocks.some(b=>b.a.length>1)) return false;
   const out=[];
   blocks.forEach(b=>{
     if(b.a.length<=1){ out.push(b); }
-    else { out.push({t:b.t,a:[b.a[0]],h:b.h}); b.a.slice(1).forEach(x=>out.push({t:'',a:[x],h:0})); }
+    else { out.push({t:b.t,a:[b.a[0]],h:b.h,c:b.c}); b.a.slice(1).forEach(x=>out.push({t:'',a:[x],h:0})); }
   });
   const f={name:it.f.name};
-  out.forEach((b,i)=>{ const k=i===0?'text':'m'+(i-1); f[k]=b.t; if(b.h) f['h_'+k]=b.h; if(b.a.length) f['a_'+k]=b.a; });
+  out.forEach((b,i)=>{ const k=i===0?'text':'m'+(i-1); f[k]=b.t; if(b.h) f['h_'+k]=b.h; if(b.a.length) f['a_'+k]=b.a; if(b.c) f['c_'+k]=b.c; });
   it.f=f; return true;
 }
 function addInlineExtra(id){
@@ -826,8 +838,8 @@ function editHtml(it){
   return `<div class="body" id="ed_${it.id}">
     <label style="margin-top:14px">Titre</label>
     <input class="ename" type="text" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc((it.f.name||'').toUpperCase())}" oninput="upperInput(this); inlineChanged()">
-    <div style="margin-top:14px">${blockHtml('text', it.f.text, it.f.a_text, false)}</div>
-    <div class="eextras">${ks.map(k=>blockHtml(k, it.f[k], it.f['a_'+k], true)).join('')}</div>
+    <div style="margin-top:14px">${blockHtml('text', it.f.text, it.f.a_text, false, it.f.c_text)}</div>
+    <div class="eextras">${ks.map(k=>blockHtml(k, it.f[k], it.f['a_'+k], true, it.f['c_'+k])).join('')}</div>
     <button class="gen" onclick="addInlineExtra('${it.id}')">+ Ajouter un onglet</button>
     <div class="acts"><button class="danger" onclick="askDelete('${it.id}')">Supprimer le dossier</button></div>
   </div>`;
@@ -838,7 +850,7 @@ function readHtml(it){
     return '<div class="body">'+ks.map(k=>{
       const v=it.f[k]||'', fl=it.f['a_'+k]||[];
       if(!v && !fl.length) return '';
-      return `<div class="fld ro">${v?lineRowsHtml(it.id,k,v):''}${linksHtml(v)}${filesRo(fl)}</div>`;
+      return `<div class="fld ro">${v?lineRowsHtml(it.id,k,v,it.f['c_'+k]):''}${linksHtml(v)}${filesRo(fl)}</div>`;
     }).join('')+'</div>';
   }
   const locked=itemLocked(it);
