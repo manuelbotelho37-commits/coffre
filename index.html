@@ -96,6 +96,7 @@
   .lrows{width:100%;}
   .lrow{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); min-height:36px; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
   .lrow:first-child{border-top:none;}
+  .cpadd{flex:none; height:36px; padding:0 12px; border-radius:8px; border:1px dashed var(--brass); background:transparent; color:#e3bd68; font-size:.9rem; white-space:nowrap;}
   .ltx{flex:1; min-width:0; word-break:break-word; font-size:1.02rem; white-space:pre-wrap;}
   .cpi{width:42px; height:36px; padding:0; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--brass); background:#2a2518; color:#e3bd68;}
   .cpi.all{border-color:var(--line); background:var(--surface2); color:var(--text);}
@@ -340,10 +341,15 @@ function lineRowsHtml(id,k,v){
   const off = new Set((it&&it.nocp)||[]);
   const lines = String(v).split('\n');
   const idx = []; lines.forEach((l,i)=>{ if(l.trim()!=='') idx.push(i); });
+  const vis = idx.filter(i=>!off.has(lines[i].trim()));
   return '<div class="lrows">' + lines.map((l,i)=>{
     if(l.trim()==='') return '';
-    const all = (i===idx[0] && idx.length>1);
-    const one = off.has(l.trim()) ? '' : `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
+    if(off.has(l.trim())){
+      const ask = cpAsk===id+'|'+k+'|'+i;
+      return `<div class="lrow nocp" data-id="${id}" data-k="${k}" data-i="${i}" onclick="askLineCopy('${id}','${k}',${i})"><div class="ltx">${esc(l)}</div>${ask?`<button type="button" class="cpadd" onclick="event.stopPropagation(); toggleLineCopy('${id}','${k}',${i})">+ Copier</button>`:''}</div>`;
+    }
+    const all = (i===vis[0] && idx.length>1);
+    const one = `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
     const btn = all
       ? `<div class="cpg"><button type="button" class="cpi all" onclick="copyField('${id}','${k}')" aria-label="Tout copier">${IC_ALL}</button>${one}</div>`
       : one;
@@ -351,7 +357,8 @@ function lineRowsHtml(id,k,v){
   }).join('') + '</div>';
 }
 /* appui long sur une ligne : enlever / remettre son bouton copier */
-let lpT=null, lpX=0, lpY=0, lpDone=false;
+let lpT=null, lpX=0, lpY=0, lpDone=false, cpAsk='';
+function askLineCopy(id,k,i){ const a=id+'|'+k+'|'+i; cpAsk = (cpAsk===a) ? '' : a; renderList(); }
 document.addEventListener('pointerdown', e=>{
   const row=e.target.closest && e.target.closest('.lrow[data-id]'); if(!row) return;
   lpDone=false; lpX=e.clientX; lpY=e.clientY; clearTimeout(lpT);
@@ -368,7 +375,7 @@ async function toggleLineCopy(id,k,i){
   const off=new Set(it.nocp||[]);
   const hide=!off.has(t);
   hide ? off.add(t) : off.delete(t);
-  it.nocp=Array.from(off);
+  it.nocp=Array.from(off); cpAsk='';
   try{ navigator.vibrate && navigator.vibrate(30); }catch(e){}
   renderList();
   toast(hide ? 'Bouton copier enlevé' : 'Bouton copier remis');
