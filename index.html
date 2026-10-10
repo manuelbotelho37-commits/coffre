@@ -387,8 +387,9 @@ function lineRowsHtml(id,k,v){
 }
 function copyGroup(id,k,a,b){
   const it=items.find(x=>x.id===id); if(!it) return;
-  const L=String(it.f[k]||'').split('\n').slice(a,b+1).filter(x=>!cpBlank(x)).map(x=>x.replace(/^\s*[•*–-]\s*/,'').trim());
-  copyText(L.join('\n'));
+  const L=String(it.f[k]||'').split('\n').slice(a,b+1).filter(x=>!cpBlank(x));
+  if(L.length===1){ copyText(smartValue(L[0])); return; }
+  copyText(L.map(x=>x.replace(/^\s*[•*–-]\s*/,'').trim()).join('\n'));
 }
 function selStart(id){ selId=id; sel=new Set(); renderList(); }
 function selEnd(){ selId=null; sel=new Set(); renderList(); }
