@@ -94,7 +94,7 @@
   .blk textarea.etext:focus{border:none;}
   .fbtns{display:flex; gap:6px; flex-wrap:wrap; padding:8px 10px; border-top:1px solid var(--line);}
   .lrows{width:100%;}
-  .lrow{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); min-height:36px; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  .lrow{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line);}
   .lrow:first-child{border-top:none;}
   .ltx{flex:1; min-width:0; word-break:break-word; font-size:1.02rem; white-space:pre-wrap;}
   .cpi{width:42px; height:36px; padding:0; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--brass); background:#2a2518; color:#e3bd68;}
@@ -336,45 +336,17 @@ function smartValue(line){
   return t;
 }
 function lineRowsHtml(id,k,v){
-  const it = items.find(x=>x.id===id);
-  const off = new Set((it&&it.nocp)||[]);
   const lines = String(v).split('\n');
   const idx = []; lines.forEach((l,i)=>{ if(l.trim()!=='') idx.push(i); });
-  const vis = idx.filter(i=>!off.has(lines[i].trim()));
   return '<div class="lrows">' + lines.map((l,i)=>{
     if(l.trim()==='') return '';
-    if(off.has(l.trim())) return `<div class="lrow nocp" data-id="${id}" data-k="${k}" data-i="${i}"><div class="ltx">${esc(l)}</div></div>`;
-    const all = (i===vis[0] && idx.length>1);
+    const all = (i===idx[0] && idx.length>1);
     const one = `<button type="button" class="cpi" onclick="copyLine('${id}','${k}',${i})" aria-label="Copier cette ligne">${IC_COPY}</button>`;
     const btn = all
       ? `<div class="cpg"><button type="button" class="cpi all" onclick="copyField('${id}','${k}')" aria-label="Tout copier">${IC_ALL}</button>${one}</div>`
       : one;
-    return `<div class="lrow" data-id="${id}" data-k="${k}" data-i="${i}"><div class="ltx">${esc(l)}</div>${btn}</div>`;
+    return `<div class="lrow"><div class="ltx">${esc(l)}</div>${btn}</div>`;
   }).join('') + '</div>';
-}
-/* appui long sur une ligne : enlever / remettre son bouton copier */
-let lpT=null, lpX=0, lpY=0, lpDone=false;
-document.addEventListener('pointerdown', e=>{
-  const row=e.target.closest && e.target.closest('.lrow[data-id]'); if(!row || !e.target.closest('.cpi:not(.all)')) return;
-  lpDone=false; lpX=e.clientX; lpY=e.clientY; clearTimeout(lpT);
-  lpT=setTimeout(()=>{ lpDone=true; toggleLineCopy(row.dataset.id,row.dataset.k,+row.dataset.i); }, 550);
-});
-document.addEventListener('pointermove', e=>{ if(lpT && (Math.abs(e.clientX-lpX)>10 || Math.abs(e.clientY-lpY)>10)){ clearTimeout(lpT); lpT=null; } });
-['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev, ()=>{ clearTimeout(lpT); lpT=null; }));
-document.addEventListener('click', e=>{ if(lpDone && e.target.closest && e.target.closest('.lrow')){ e.stopPropagation(); e.preventDefault(); lpDone=false; } }, true);
-document.addEventListener('contextmenu', e=>{ if(e.target.closest && e.target.closest('.lrow[data-id]')) e.preventDefault(); });
-async function toggleLineCopy(id,k,i){
-  const it=items.find(x=>x.id===id); if(!it) return;
-  const line=String(it.f[k]||'').split('\n')[i]; if(line===undefined) return;
-  const t=line.trim(); if(!t) return;
-  const off=new Set(it.nocp||[]);
-  const hide=!off.has(t);
-  hide ? off.add(t) : off.delete(t);
-  it.nocp=Array.from(off);
-  try{ navigator.vibrate && navigator.vibrate(30); }catch(e){}
-  renderList();
-  toast(hide ? 'Bouton copier enlevé' : 'Bouton copier remis');
-  await save(true);
 }
 function copyLine(id,k,i){
   const it = items.find(x=>x.id===id); if(!it) return;
