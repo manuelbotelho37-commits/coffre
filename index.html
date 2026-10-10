@@ -82,7 +82,11 @@
   .back{padding:6px 14px; font-size:1.4rem; line-height:1;}
   .dtitle{flex:1; min-width:0; font-family:'Fraunces',serif; font-weight:600; font-size:1.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   #detailwrap .body{padding:0 0 40px; border-top:none;}
-  .blk{border:1px solid var(--line); border-radius:10px; background:var(--surface2); overflow:hidden;}
+  .blk{border:1px solid var(--line); border-radius:10px; background:var(--surface2); overflow:hidden; position:relative;}
+  .blk textarea.etext.hasmk{padding-right:40px;}
+  .cpmarks{position:absolute; top:0; right:0; width:36px; pointer-events:none;}
+  .cpmk{position:absolute; right:6px; width:24px; border-right:3px solid var(--brass); color:#e3bd68; display:flex; align-items:flex-start; justify-content:flex-start; padding-top:3px;}
+  .cpmk svg{width:18px; height:18px;}
   .blk textarea.hid{display:none;}
   .xblk.fonly .xdel{display:none;}
   .blk.fonly .fl{padding-top:0;}
@@ -897,8 +901,37 @@ function initInline(){
     if(empty && hasFiles){ minH=48; h=0; }
     ta.style.height='auto'; ta.style.height=Math.max(h, ta.scrollHeight+4, minH)+'px';
     attachGrow(ta); histOf(ta);
+    if(it){ ta.dataset.iid=it.id; markCopy(ta); ta.addEventListener('input',()=>{ clearTimeout(ta._mk); ta._mk=setTimeout(()=>markCopy(ta),150); }); }
   });
 }
+/* en modification : montrer à droite les lignes qui ont un bouton copier */
+function markCopy(ta){
+  const blk=ta.closest('.blk'); if(!blk) return;
+  let lay=blk.querySelector(':scope > .cpmarks'); if(lay) lay.remove();
+  const it=items.find(x=>x.id===ta.dataset.iid); if(!it || ta.classList.contains('hid')) return;
+  const c=cpxOf(it); if(!c.g.length){ ta.classList.remove('hasmk'); return; }
+  const lines=ta.value.split('\n'); const spans=[];
+  for(let i=0;i<lines.length;i++){
+    if(cpBlank(lines[i])) continue;
+    for(const G of c.g){ const e=groupAt(lines,i,G); if(e>=0){ spans.push([i,e]); i=e; break; } }
+  }
+  if(!spans.length){ ta.classList.remove('hasmk'); return; }
+  ta.classList.add('hasmk');
+  const cs=getComputedStyle(ta); const mir=document.createElement('div');
+  ['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopWidth','borderLeftWidth','borderRightWidth','boxSizing','tabSize'].forEach(p=>mir.style[p]=cs[p]);
+  Object.assign(mir.style,{position:'absolute',visibility:'hidden',whiteSpace:'pre-wrap',wordWrap:'break-word',overflowWrap:'break-word',width:ta.clientWidth+'px',borderStyle:'solid',borderColor:'transparent',top:'0',left:'0'});
+  mir.innerHTML=lines.map((l,i)=>`<div data-l="${i}">${esc(l)||'&#8203;'}</div>`).join('');
+  blk.appendChild(mir);
+  lay=document.createElement('div'); lay.className='cpmarks';
+  const base=ta.offsetTop - ta.scrollTop;
+  spans.forEach(([a,b])=>{
+    const A=mir.querySelector(`[data-l="${a}"]`), B=mir.querySelector(`[data-l="${b}"]`);
+    const top=base+A.offsetTop, bot=base+B.offsetTop+B.offsetHeight;
+    lay.insertAdjacentHTML('beforeend', `<div class="cpmk" style="top:${top+3}px;height:${Math.max(bot-top-6,20)}px" title="Bouton copier">${IC_COPY}</div>`);
+  });
+  mir.remove(); blk.appendChild(lay);
+}
+window.addEventListener('resize',()=>{ document.querySelectorAll('#detailwrap textarea.etext').forEach(ta=>{ if(ta.dataset.iid) markCopy(ta); }); });
 function lockRow(it){
   const locked=itemLocked(it);
   return `<button type="button" class="lockbtn ${locked?'closed':'open'}" onclick="toggleLock('${it.id}')">${locked?LK_CLOSED:LK_OPEN}</button>`;
