@@ -481,6 +481,7 @@ function renderSetup(){
     <div class="big">🔐</div><h1>Ton coffre</h1>
     <p>Choisis un <b>code secret</b> : 6 chiffres, ou 10 caractères avec lettres et chiffres. C'est le seul que tu devras retenir.</p>
     <div class="warn">⚠️ Si tu l'oublies, personne ne peut le retrouver, pas même moi. Note-le sur papier et range-le chez toi.</div>
+    <div class="warn">Tu avais déjà un coffre et il a disparu ? Ne crée pas de nouveau code : touche « J'ai déjà une sauvegarde » tout en bas.</div>
     <label>Code secret</label>
     <input type="password" id="p1" autocomplete="new-password" autocapitalize="none" oninput="codeHint(this.value)">
     <div id="hint" style="text-align:left; font-size:.84rem; margin-top:6px; min-height:1.2em"></div>
@@ -1236,6 +1237,8 @@ async function doRestore(){
 
 /* ---------- Démarrage ---------- */
 (async function boot(){
+  // demander au navigateur de ne jamais effacer les données de Coffre tout seul
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   await initStore();
   record = await loadRecord();
   if(record){
