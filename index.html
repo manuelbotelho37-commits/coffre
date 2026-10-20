@@ -1306,7 +1306,18 @@ async function doRestore(){
 }
 
 /* ---------- Démarrage ---------- */
+const ONLINE_URL='https://claude.ai/artifact/GmPasZU4hU8jLCDAArDgtT';
+function renderGoOnline(){
+  $('#app').innerHTML = `<div class="center">
+    <div class="big">🔐</div><h1>Coffre</h1>
+    <p>Ton Coffre est maintenant <b>sauvegardé en ligne</b>. Il s'ouvre dans Claude.</p>
+    <a href="${ONLINE_URL}" class="primary" style="display:block; text-decoration:none; padding:16px; border-radius:10px">Ouvrir mon Coffre</a>
+    <p style="margin-top:40px; font-size:.8rem"><a href="?telephone=1" style="color:var(--dim)">Ouvrir la copie gardée sur ce téléphone</a></p>
+  </div>`;
+  setTimeout(()=>{ try{ location.href=ONLINE_URL; }catch(e){} }, 400);
+}
 (async function boot(){
+  if(/github\.io$/.test(location.hostname) && !/telephone=1/.test(location.search)){ renderGoOnline(); return; }
   // demander au navigateur de ne jamais effacer les données de Coffre tout seul
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   await initStore();
