@@ -267,14 +267,14 @@ async function deriveKey(pw, s, it){
 }
 async function encryptRecord(){
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify({items, fk:fkB64})));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify({items, fk:fkB64, fa})));
   return {v:1, s:(strongFlag?1:0), ts:Date.now(), it:iters, salt:b64(salt), iv:b64(iv), data:b64(ct)};
 }
 async function decryptRecord(rec, k){
   const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(rec.iv)}, k, unb64(rec.data));
   const p = JSON.parse(dec.decode(pt));
   if(Array.isArray(p)){ lastFk=null; return p; }
-  lastFk = p.fk || null; return p.items || [];
+  lastFk = p.fk || null; fa = p.fa || {}; return p.items || [];
 }
 async function initDataKey(){
   let migrate=false;
@@ -292,6 +292,7 @@ async function initDataKey(){
     }
     try{ await save(true); }catch(e){}
   }
+  setTimeout(()=>{ syncFiles().catch(()=>{}); }, 1500);
 }
 
 /* ---------- Stockage ---------- */
@@ -478,7 +479,7 @@ async function lock(){
   if(key){ try{ clearTimeout(edT); collectOpenInline(); items.forEach(i=>{i.locked=true;}); await save(true); }catch(e){} }
   kvDel('keep'); keepExp=0; clearTimeout(keepT);
   urlCache.forEach(u=>{ try{URL.revokeObjectURL(u);}catch(e){} }); urlCache.clear();
-  dkey=null; fkB64=''; lastFk=null;
+  dkey=null; fkB64=''; lastFk=null; fa={};
   key=null; items=[]; openId=null; revealed=new Set(); q=''; filter='all';
   clearTimeout(lockTimer); closeModal();
   renderLock();
@@ -618,6 +619,37 @@ const LK_OPEN='<svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11
 const DL_OK=['gif','png','jpg','jpeg','webp','mp4','webm','txt','json','md','docx','pptx','epub','csv','html','svg','pdf','xlsx','zip'];
 const DL_MIME={'application/pdf':'pdf','image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','text/plain':'txt','text/csv':'csv','application/zip':'zip','application/json':'json','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx'};
 function fOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open('coffre_files',1); r.onupgradeneeded=()=>r.result.createObjectStore('f'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+let fa={}, assetsNs=null, assetsTried=false, syncing=false;
+async function getAssets(){ if(!assetsTried){ assetsTried=true; try{ if(typeof claude!=='undefined' && claude && claude.use) assetsNs=await claude.use('assets'); }catch(e){ assetsNs=null; } } return assetsNs; }
+// copie en ligne d'un fichier déjà chiffré (illisible sans ton code)
+async function fUpload(id,v){
+  if(!onCloud() || fa[id]) return;
+  const a=await getAssets(); if(!a) return;
+  const body=JSON.stringify({iv:b64(v.iv), ct:b64(v.ct), k:(v.k?1:0)});
+  if(body.length>19*1024*1024) return;
+  const r=await a.upload(new Blob([body],{type:'application/json'}),{type:'application/json'});
+  fa[id]=r.id;
+}
+async function fPutUp(id,v){ await fPut(id,v); try{ await fUpload(id,v); if(fa[id] && key) await save(true); }catch(e){} }
+async function fGetAny(id){
+  const r=await fGet(id); if(r) return r;
+  if(!fa[id]) return null;
+  try{
+    const res=await fetch('/_blob/'+fa[id]); if(!res.ok) return null;
+    const j=await res.json(); const v={iv:unb64(j.iv), ct:unb64(j.ct).buffer, k:j.k?1:0};
+    try{ await fPut(id,v); }catch(e){}
+    return v;
+  }catch(e){ return null; }
+}
+async function syncFiles(){
+  if(syncing || !onCloud() || !key) return; syncing=true;
+  try{
+    const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>{ if(!fa[id]) ids.push(id); }));
+    let n=0;
+    for(const id of ids){ try{ const v=await fGet(id); if(v){ await fUpload(id,v); if(fa[id]) n++; } }catch(e){} }
+    if(n && key) await save(true);
+  }finally{ syncing=false; }
+}
 async function fPut(id,v){ const d=await fOpen(); return new Promise((res,rej)=>{ const t=d.transaction('f','readwrite'); t.objectStore('f').put(v,id); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
 async function fGet(id){ const d=await fOpen(); return new Promise((res,rej)=>{ const q=d.transaction('f').objectStore('f').get(id); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
 async function fDel(id){ try{ const d=await fOpen(); await new Promise(res=>{ const t=d.transaction('f','readwrite'); t.objectStore('f').delete(id); t.oncomplete=()=>res(); t.onerror=()=>res(); }); }catch(e){} for(const [k,u] of Array.from(urlCache)){ if(k.indexOf(id+'_')===0){ try{URL.revokeObjectURL(u);}catch(e){} urlCache.delete(k); } } }
@@ -638,7 +670,7 @@ async function rotateBlob(blob,deg){
 async function fileUrl(m){
   const rot=(((m.rot||0)%360)+360)%360, ck=m.id+'_'+rot;
   if(urlCache.has(ck)) return urlCache.get(ck);
-  const rec=await fGet(m.id); if(!rec) return null;
+  const rec=await fGetAny(m.id); if(!rec) return null;
   const buf=await decBuf(rec);
   let blob=new Blob([buf],{type:m.type||'image/jpeg'});
   if(rot) blob=await rotateBlob(blob,rot);
@@ -679,7 +711,7 @@ async function onPickFile(inp){
     if(file.size>15*1024*1024){ toast('Fichier trop lourd (15 Mo maximum)'); continue; }
     try{
       const buf=await file.arrayBuffer(); const e=await encBuf(buf); const id='f'+newId();
-      await fPut(id,{iv:e.iv,ct:e.ct,k:1});
+      await fPutUp(id,{iv:e.iv,ct:e.ct,k:1});
       let target=blk;
       if(getFiles(blk).length>0){
         const box=body.querySelector('.eextras');
@@ -752,7 +784,7 @@ async function saveBlobAs(name, blob){
 async function downloadFile(id){
   const m=findMeta(id); if(!m) return;
   try{
-    const rec=await fGet(id); if(!rec){ toast('Fichier absent de cet appareil'); return; }
+    const rec=await fGetAny(id); if(!rec){ toast('Fichier absent de cet appareil'); return; }
     const buf=await decBuf(rec); const name=nameForDl(m);
     if(!name){ toast('Ce format ne peut pas être téléchargé ici'); return; }
     await saveBlobAs(name, new Blob([buf],{type:m.type||'application/octet-stream'}));
@@ -1193,7 +1225,7 @@ async function doBackupFull(){
     const entries=[], parts=[]; let off=0;
     const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>ids.push(id)));
     for(const id of ids){
-      const r=await fGet(id); if(!r) continue;
+      const r=await fGetAny(id); if(!r) continue;
       const ct=new Uint8Array(r.ct);
       entries.push({id, iv:b64(r.iv), k:(r.k?1:0), off, len:ct.length});
       parts.push(ct); off+=ct.length;
