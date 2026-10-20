@@ -209,8 +209,12 @@ function renderKeep(){
 const normCode = v => String(v||'').replace(/[\s-]/g,'');
 let strongFlag=false, lkT=null;
 let dkey=null, fkB64='', lastFk=null;
+const onCloud = () => !!docRef();
+const weakForCloud = v => /^\d+$/.test(normCode(v)) && normCode(v).length<12;
+let weakCode=false;
 function codeProblem(v){
   v=normCode(v);
+  if(onCloud() && weakForCloud(v)) return 'Pour la sauvegarde en ligne : au moins 10 caractères, avec des lettres ET des chiffres.';
   if(/^\d+$/.test(v)){
     if(v.length<6) return 'Avec des chiffres seulement, il en faut au moins 6.';
     if(new Set(v).size<3) return 'Ce code est trop simple : utilise des chiffres variés.';
@@ -233,7 +237,12 @@ function codeHint(v){
 }
 function genCode(){
   let g='';
-  do{ const a=crypto.getRandomValues(new Uint32Array(6)); let d='';
+  if(onCloud()){
+    const L='abcdefghijkmnpqrstuvwxyz', D='23456789';
+    do{ const a=crypto.getRandomValues(new Uint32Array(10)); g='';
+      for(let i=0;i<10;i++) g+=(i%5<3?L[a[i]%L.length]:D[a[i]%D.length]);
+    }while(codeProblem(g));
+  } else do{ const a=crypto.getRandomValues(new Uint32Array(6)); let d='';
     for(let i=0;i<6;i++) d+=String(a[i]%10);
     g=d.slice(0,3)+' '+d.slice(3,6);
   }while(codeProblem(g));
@@ -479,7 +488,7 @@ async function lock(){
 function renderSetup(){
   $('#app').innerHTML = `<div class="center">
     <div class="big">🔐</div><h1>Ton coffre</h1>
-    <p>Choisis un <b>code secret</b> : 6 chiffres, ou 10 caractères avec lettres et chiffres. C'est le seul que tu devras retenir.</p>
+    <p>Choisis un <b>code secret</b> : ${onCloud()?'10 caractères avec des lettres et des chiffres':'6 chiffres, ou 10 caractères avec lettres et chiffres'}. C'est le seul que tu devras retenir.</p>
     <div class="warn">⚠️ Si tu l'oublies, personne ne peut le retrouver, pas même moi. Note-le sur papier et range-le chez toi.</div>
     <div class="warn">Tu avais déjà un coffre et il a disparu ? Ne crée pas de nouveau code : touche « J'ai déjà une sauvegarde » tout en bas.</div>
     <label>Code secret</label>
@@ -487,7 +496,7 @@ function renderSetup(){
     <div id="hint" style="text-align:left; font-size:.84rem; margin-top:6px; min-height:1.2em"></div>
     <label>Retape-le pour confirmer</label>
     <input type="password" id="p2" autocomplete="new-password" autocapitalize="none">
-    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code (6 chiffres)</button>
+    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code${onCloud()?'':' (6 chiffres)'}</button>
     <div id="genmsg" style="color:var(--brass); font-size:.84rem; margin-top:8px; text-align:left"></div>
     <div class="err" id="err"></div>
     <button class="primary" id="go" onclick="doSetup()">Créer mon coffre</button>
@@ -511,7 +520,7 @@ async function doSetup(){
   if(p1!==p2) return setErr('Les deux codes ne sont pas identiques.');
   const b=$('#go'); b.disabled=true; b.textContent='Création…';
   salt=crypto.getRandomValues(new Uint8Array(16)); iters=1000000; strongFlag=true;
-  key=await deriveKey(p1, salt, iters); items=[]; lastFk=null; await initDataKey();
+  key=await deriveKey(p1, salt, iters); items=[]; lastFk=null; weakCode=weakForCloud(p1); await initDataKey();
   await save(); resetTimer(); renderMain();
 }
 async function doUnlock(){
@@ -521,7 +530,7 @@ async function doUnlock(){
   try{
     const s=unb64(record.salt); const it=record.it||310000;
     const k=await deriveKey(p, s, it);
-    items=await decryptRecord(record, k); items.forEach(i=>{i.locked=true;}); key=k; salt=s; iters=it; fails=0;
+    items=await decryptRecord(record, k); items.forEach(i=>{i.locked=true;}); key=k; salt=s; iters=it; fails=0; weakCode=weakForCloud(p);
     strongFlag=!!record.s; lkSet({});
     try{ await initDataKey(); }catch(e){}
     resetTimer(); renderMain();
@@ -557,7 +566,7 @@ function bkReminder(){
 }
 function renderWarn(){
   const el=$('#warnRow'); if(!el) return;
-  el.innerHTML = bkReminder() + (strongFlag ? '' : `<div class="warn" style="margin-top:12px">⚠️ Ton code actuel est trop court pour protéger des informations confidentielles.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="changePwForm()">Renforcer mon code maintenant</button></div>`);
+  el.innerHTML = bkReminder() + ((onCloud() && weakCode) ? `<div class="warn" style="margin-top:12px">🔐 Ton coffre est sauvegardé en ligne. Pour qu'il soit impossible à ouvrir sans toi, prends un code plus long : 10 caractères avec des lettres et des chiffres.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="changePwForm()">Changer mon code maintenant</button></div>` : '') + (strongFlag ? '' : `<div class="warn" style="margin-top:12px">⚠️ Ton code actuel est trop court pour protéger des informations confidentielles.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="changePwForm()">Renforcer mon code maintenant</button></div>`);
 }
 function renderChips(){
   const all=[['all','Tout']].concat(Object.keys(CATS).map(k=>[k, CATS[k].icon+' '+CATS[k].label]));
@@ -1133,7 +1142,8 @@ function lastBkText(){
 function openSettings(){
   openModal(`<h2>Réglages</h2>
     <p style="color:var(--dim); font-size:.8rem; margin:4px 0 6px">${esc(lastBkText())}</p>
-    <button class="setbtn" onclick="importOldForm()">📥 Ajouter les notes de l'ancien Coffre<small>Ajoute les dossiers de l'ancien Coffre sans rien effacer ici.</small></button>
+    <button class="setbtn" onclick="importOldForm()">📥 Ajouter les notes d'un autre Coffre<small>Ajoute ses dossiers sans rien effacer ici.</small></button>
+    <button class="setbtn" onclick="copyForOther()">📋 Copier tout pour un autre Coffre<small>Ensuite, dans l'autre Coffre : ⚙️ puis « Ajouter les notes d'un autre Coffre ».</small></button>
     <button class="setbtn" onclick="changePwForm()">🔑 Changer le code secret</button>
     <button class="setbtn" onclick="doBackupFull()">💾 Faire une sauvegarde<small>Textes, photos et fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
     <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>L'appli reconnaît toute seule le fichier de sauvegarde.</small></button>
@@ -1142,12 +1152,12 @@ function openSettings(){
 }
 function changePwForm(){
   openModal(`<h2>Nouveau code secret</h2>
-    <div class="warn">6 chiffres, ou 10 caractères avec lettres et chiffres. Si tu l'oublies, il ne peut pas être récupéré : note-le sur papier.</div>
+    <div class="warn">${onCloud()?'10 caractères avec des lettres et des chiffres':'6 chiffres, ou 10 caractères avec lettres et chiffres'}. Si tu l'oublies, il ne peut pas être récupéré : note-le sur papier.</div>
     <label>Code actuel</label><input type="password" id="n0" autocomplete="current-password" autocapitalize="none">
     <label>Nouveau code</label><input type="password" id="n1" autocomplete="new-password" autocapitalize="none" oninput="codeHint(this.value)">
     <div id="hint" style="font-size:.84rem; margin-top:6px; min-height:1.2em"></div>
     <label>Retape-le</label><input type="password" id="n2" autocomplete="new-password" autocapitalize="none">
-    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code (6 chiffres)</button>
+    <button class="gen" type="button" onclick="genCode()">🎲 Proposer un code${onCloud()?'':' (6 chiffres)'}</button>
     <div id="genmsg" style="color:var(--brass); font-size:.84rem; margin-top:8px"></div>
     <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
     <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" style="margin-top:0" onclick="doChangePw()">Changer</button></div></div>`);
@@ -1159,7 +1169,7 @@ async function doChangePw(){
   catch(e){ return setErr('Code actuel incorrect.'); }
   const pr=codeProblem(a); if(pr) return setErr(pr);
   if(a!==b) return setErr('Les deux codes ne sont pas identiques.');
-  salt=crypto.getRandomValues(new Uint8Array(16)); iters=1000000; strongFlag=true; key=await deriveKey(a, salt, iters);
+  salt=crypto.getRandomValues(new Uint8Array(16)); iters=1000000; strongFlag=true; weakCode=weakForCloud(a); key=await deriveKey(a, salt, iters);
   closeModal(); await save(); if(keepExp){ try{ await kvSet('keep',{key,exp:keepExp}); }catch(e){} }
   renderWarn(); toast('✓ Code secret changé');
 }
@@ -1195,12 +1205,21 @@ async function doBackupFull(){
   }catch(e){ if(!(e&&e.code==='declined')) toast('Échec de la sauvegarde complète'); }
 }
 /* --- ajouter les notes de l'ancien Coffre (sans rien effacer) --- */
+async function copyForOther(){
+  try{
+    collectOpenInline();
+    const t=JSON.stringify(await encryptRecord());
+    try{ await navigator.clipboard.writeText(t); }
+    catch(e){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(x){} ta.remove(); }
+    closeModal(); toast('✓ Copié ! Dans l\'autre Coffre : ⚙️ puis « Ajouter les notes d\'un autre Coffre »');
+  }catch(e){ toast('Échec de la copie'); }
+}
 function importOldForm(){
-  openModal(`<h2>Ajouter les notes de l'ancien Coffre</h2>
-    <p style="color:var(--dim); font-size:.86rem; line-height:1.45; margin:6px 0 4px">1. Dans l'ancien Coffre, touche ⚙️ puis « Copier tout pour le nouveau Coffre ».<br>2. Reviens ici et touche « Coller ».</p>
+  openModal(`<h2>Ajouter les notes d'un autre Coffre</h2>
+    <p style="color:var(--dim); font-size:.86rem; line-height:1.45; margin:6px 0 4px">1. Dans l'autre Coffre, touche ⚙️ puis « Copier tout… ».<br>2. Reviens ici et touche « Coller ».</p>
     <button class="gen" type="button" onclick="pasteOld()">📋 Coller</button>
     <textarea id="imp_txt" placeholder="Ce qui a été copié s'affiche ici" style="min-height:70px; margin-top:8px; font-size:.75rem"></textarea>
-    <label>Code de l'ancien Coffre</label><input type="password" id="imp_pw" autocapitalize="none" inputmode="numeric">
+    <label>Code de l'autre Coffre</label><input type="password" id="imp_pw" autocapitalize="none" inputmode="numeric">
     <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
     <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" id="imp_go" style="margin-top:0" onclick="doImportOld()">Ajouter</button></div></div>`);
 }
@@ -1212,27 +1231,28 @@ async function doImportOld(){
   const raw=($('#imp_txt').value||''); const pw=normCode($('#imp_pw').value);
   let rec=null;
   try{ const a=raw.indexOf('{'), b=raw.lastIndexOf('}'); rec=JSON.parse(raw.slice(a,b+1)); if(!rec.salt||!rec.iv||!rec.data) throw 0; }
-  catch(e){ return setErr('Ce qui est collé n\'est pas la copie de l\'ancien Coffre.'); }
-  if(!pw) return setErr('Entre le code de l\'ancien Coffre.');
+  catch(e){ return setErr('Ce qui est collé n\'est pas une copie de Coffre.'); }
+  if(!pw) return setErr('Entre le code de l\'autre Coffre.');
   const btn=$('#imp_go'); btn.disabled=true; btn.textContent='Ouverture…';
   let old;
   try{
     const k=await deriveKey(pw, unb64(rec.salt), rec.it||310000);
     const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(rec.iv)}, k, unb64(rec.data));
     const p=JSON.parse(dec.decode(pt)); old=Array.isArray(p)?p:(p.items||[]);
-  }catch(e){ btn.disabled=false; btn.textContent='Ajouter'; return setErr('Code incorrect pour l\'ancien Coffre.'); }
+  }catch(e){ btn.disabled=false; btn.textContent='Ajouter'; return setErr('Code incorrect pour l\'autre Coffre.'); }
   collectOpenInline();
   const txt=it=>JSON.stringify(Object.keys(it.f||{}).filter(k=>k==='name'||/^(text|m\d+|user|pwd|note|holder|iban|num|code)$/.test(k)).sort().map(k=>[k,it.f[k]]));
   const ids=new Set(items.map(x=>x.id)), sames=new Set(items.map(txt));
   const names=new Set(items.map(x=>String(x.f.name||'').trim().toUpperCase()));
   let n=0;
   for(const o of old){
-    if(!o||!o.f||ids.has(o.id)) continue;
+    if(!o||!o.f) continue;
     const f={}; Object.keys(o.f).forEach(k=>{ if(k.indexOf('a_')!==0) f[k]=o.f[k]; });
     const it=Object.assign({}, o, {f, locked:true});
     if(sames.has(txt(it))) continue;
+    if(ids.has(it.id)) it.id=newId();
     const nm=String(f.name||'').trim().toUpperCase();
-    if(names.has(nm)) f.name=nm+' (ANCIEN)';
+    if(names.has(nm)) f.name=nm+' (COPIE)';
     items.push(it); ids.add(it.id); n++;
   }
   closeModal(); openId=null; renderList();
@@ -1268,7 +1288,7 @@ async function doRestore(){
   const p=$('#rp').value; if(!p||!pendingRestore) return;
   try{
     const s=unb64(pendingRestore.salt), it=pendingRestore.it||310000, k=await deriveKey(normCode(p), s, it);
-    items=await decryptRecord(pendingRestore, k); key=k; salt=s; iters=it; strongFlag=!!pendingRestore.s; pendingRestore=null;
+    items=await decryptRecord(pendingRestore, k); key=k; salt=s; iters=it; weakCode=weakForCloud(p); strongFlag=!!pendingRestore.s; pendingRestore=null;
     try{ await initDataKey(); }catch(e){}
     if(pendingFull){
       toast('Remise des photos et fichiers…');
