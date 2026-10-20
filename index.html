@@ -562,6 +562,10 @@ function bkReminder(){
   const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
   const last = hasFiles ? f : Math.max(f,l);
   if(last && (Date.now()-last) < 30*24*3600*1000) return '';
+  if(onCloud()){
+    if(!hasFiles) return '';
+    return `<div class="warn" style="margin-top:12px">✓ Tes textes sont sauvegardés en ligne automatiquement. Seules les photos restent sur ce téléphone : pense à faire une sauvegarde de temps en temps.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
+  }
   return `<div class="warn" style="margin-top:12px">💾 Pense à faire une sauvegarde (avec tes photos) : tout est gardé sur ce téléphone seulement.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
 }
 function renderWarn(){
