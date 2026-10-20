@@ -1133,6 +1133,7 @@ function lastBkText(){
 function openSettings(){
   openModal(`<h2>Réglages</h2>
     <p style="color:var(--dim); font-size:.8rem; margin:4px 0 6px">${esc(lastBkText())}</p>
+    <button class="setbtn" onclick="importOldForm()">📥 Ajouter les notes de l'ancien Coffre<small>Ajoute les dossiers de l'ancien Coffre sans rien effacer ici.</small></button>
     <button class="setbtn" onclick="changePwForm()">🔑 Changer le code secret</button>
     <button class="setbtn" onclick="doBackupFull()">💾 Faire une sauvegarde<small>Textes, photos et fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
     <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>L'appli reconnaît toute seule le fichier de sauvegarde.</small></button>
@@ -1192,6 +1193,51 @@ async function doBackupFull(){
     closeModal(); renderWarn();
     toast('✓ Sauvegarde complète : '+entries.length+' fichier(s) inclus');
   }catch(e){ if(!(e&&e.code==='declined')) toast('Échec de la sauvegarde complète'); }
+}
+/* --- ajouter les notes de l'ancien Coffre (sans rien effacer) --- */
+function importOldForm(){
+  openModal(`<h2>Ajouter les notes de l'ancien Coffre</h2>
+    <p style="color:var(--dim); font-size:.86rem; line-height:1.45; margin:6px 0 4px">1. Dans l'ancien Coffre, touche ⚙️ puis « Copier tout pour le nouveau Coffre ».<br>2. Reviens ici et touche « Coller ».</p>
+    <button class="gen" type="button" onclick="pasteOld()">📋 Coller</button>
+    <textarea id="imp_txt" placeholder="Ce qui a été copié s'affiche ici" style="min-height:70px; margin-top:8px; font-size:.75rem"></textarea>
+    <label>Code de l'ancien Coffre</label><input type="password" id="imp_pw" autocapitalize="none" inputmode="numeric">
+    <div class="foot"><div class="err" id="err" style="margin:0 0 8px"></div>
+    <div class="row2"><button onclick="closeModal()">Annuler</button><button class="primary" id="imp_go" style="margin-top:0" onclick="doImportOld()">Ajouter</button></div></div>`);
+}
+async function pasteOld(){
+  try{ const t=await navigator.clipboard.readText(); $('#imp_txt').value=t||''; if(!t) setErr('Rien à coller. Recopie depuis l\'ancien Coffre.'); else setErr(''); }
+  catch(e){ setErr('Appui long dans la case puis « Coller ».'); }
+}
+async function doImportOld(){
+  const raw=($('#imp_txt').value||''); const pw=normCode($('#imp_pw').value);
+  let rec=null;
+  try{ const a=raw.indexOf('{'), b=raw.lastIndexOf('}'); rec=JSON.parse(raw.slice(a,b+1)); if(!rec.salt||!rec.iv||!rec.data) throw 0; }
+  catch(e){ return setErr('Ce qui est collé n\'est pas la copie de l\'ancien Coffre.'); }
+  if(!pw) return setErr('Entre le code de l\'ancien Coffre.');
+  const btn=$('#imp_go'); btn.disabled=true; btn.textContent='Ouverture…';
+  let old;
+  try{
+    const k=await deriveKey(pw, unb64(rec.salt), rec.it||310000);
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(rec.iv)}, k, unb64(rec.data));
+    const p=JSON.parse(dec.decode(pt)); old=Array.isArray(p)?p:(p.items||[]);
+  }catch(e){ btn.disabled=false; btn.textContent='Ajouter'; return setErr('Code incorrect pour l\'ancien Coffre.'); }
+  collectOpenInline();
+  const txt=it=>JSON.stringify(Object.keys(it.f||{}).filter(k=>k==='name'||/^(text|m\d+|user|pwd|note|holder|iban|num|code)$/.test(k)).sort().map(k=>[k,it.f[k]]));
+  const ids=new Set(items.map(x=>x.id)), sames=new Set(items.map(txt));
+  const names=new Set(items.map(x=>String(x.f.name||'').trim().toUpperCase()));
+  let n=0;
+  for(const o of old){
+    if(!o||!o.f||ids.has(o.id)) continue;
+    const f={}; Object.keys(o.f).forEach(k=>{ if(k.indexOf('a_')!==0) f[k]=o.f[k]; });
+    const it=Object.assign({}, o, {f, locked:true});
+    if(sames.has(txt(it))) continue;
+    const nm=String(f.name||'').trim().toUpperCase();
+    if(names.has(nm)) f.name=nm+' (ANCIEN)';
+    items.push(it); ids.add(it.id); n++;
+  }
+  closeModal(); openId=null; renderList();
+  await save(true);
+  toast(n ? '✓ '+n+' dossier(s) ajouté(s)' : 'Tout était déjà là, rien à ajouter');
 }
 let pendingFull=null;
 function restoreModal(){
