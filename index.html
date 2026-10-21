@@ -1577,7 +1577,7 @@ const PHONE = /github\.io$/.test(location.hostname) || /[?&]phone=1/.test(locati
 function gsUrl(){ return (gdGet('coffre_drive_url') || gdGet('vente_drive_url') || '').trim(); }
 function phoneDriveHtml(){
   return `<label style="margin-top:16px">☁️ Sauvegarde automatique sur Google Drive</label>
-    <div style="display:flex; gap:8px"><input id="gsUrl" placeholder="Colle ici le lien du script Google" style="flex:1; font-size:.8rem" value="${esc(gsUrl())}" onchange="gsSaveUrl()"><button type="button" class="gen" style="margin:0" onclick="gsSaveUrl(); gdUpload(true)">Tester</button></div>
+    <div style="display:flex; gap:8px"><input id="gsUrl" placeholder="Colle ici le lien du script Google" style="flex:1; font-size:.8rem" value="${esc(gsUrl())}" onchange="gsSaveUrl()"><button type="button" class="gen" style="margin:0; padding:12px 16px" onclick="gdInfo('Envoi en cours…',true); gsSaveUrl(); gdUpload(true)">Tester</button></div>
     <div id="gdInfo" style="font-size:.78rem; color:var(--dim); margin-top:6px; text-align:left"></div>`;
 }
 function gsSaveUrl(){ const e=document.getElementById('gsUrl'); if(!e) return; const v=e.value.trim(); gdSet('coffre_drive_url', v||null); gdInfo(); renderWarn(); }
@@ -1598,7 +1598,7 @@ if(PHONE){
     if(!key){ if(manual) gdInfo('Ouvre d\'abord ton coffre.',false); return; }
     const url=gsUrl();
     if(!url){ if(manual) gdInfo('Colle d\'abord le lien du script Google.',false); return; }
-    if(gdBusy) return;
+    if(gdBusy){ if(manual) gdInfo('Un envoi est déjà en cours, patiente quelques secondes…',true); return; }
     gdBusy=true; clearTimeout(gdTimer);
     if(manual) gdInfo('Envoi en cours… (quelques secondes avec les photos)',true);
     try{
@@ -1607,14 +1607,18 @@ if(PHONE){
       if(!manual && sig===gdGet('coffre_gd_sig')){ gdSet('coffre_gd_pending',null); return; }
       const {blob, entries}=await buildFullBlob();
       const contenu64=await blobToB64(blob);
-      const res=await fetch(url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({nom:'coffre-sauvegarde-complete-'+dateTimeTag()+'.coffre', contenu64, dossier:GD_FOLDER, garder:GD_KEEP})});
-      const txt=(await res.text()).trim();
+      const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(), 120000);
+      let txt='';
+      try{
+        const res=await fetch(url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({nom:'coffre-sauvegarde-complete-'+dateTimeTag()+'.coffre', contenu64, dossier:GD_FOLDER, garder:GD_KEEP}), signal:ctl.signal});
+        txt=(await res.text()).trim();
+      }finally{ clearTimeout(to); }
       if(txt!=='ok') throw {code:'script', message:txt.slice(0,60)};
       gdSet('coffre_gd_sig',sig); gdSet('coffre_gd_last',String(Date.now())); gdSet('coffre_gd_pending',null);
       if(manual) gdInfo('✓ Sauvegarde envoyée sur ton Google Drive ('+entries.length+' photo(s) ou fichier(s) inclus).',true); else gdInfo();
       renderWarn();
     }catch(e){
-      if(manual) gdInfo(!navigator.onLine ? 'Pas de connexion : l\'envoi se fera dès que tu auras internet.' : (e && e.code==='script') ? 'Le script Google doit être mis à jour (voir la conversation avec Claude).' : 'Échec de l\'envoi : vérifie le lien du script.', false);
+      if(manual) gdInfo(!navigator.onLine ? 'Pas de connexion : l\'envoi se fera dès que tu auras internet.' : (e && e.code==='script') ? 'Le script Google doit être mis à jour (voir la conversation avec Claude).' : (e && e.name==='AbortError') ? 'L\'envoi a pris trop de temps. Réessaie avec une meilleure connexion.' : 'Échec de l\'envoi : vérifie le lien du script. ['+((e&&(e.name||e.code))||'?')+']', false);
     }finally{ gdBusy=false; }
   };
   // copie complète dans les Téléchargements du téléphone, au plus toutes les 8 h, après une modification
