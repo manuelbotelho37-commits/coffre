@@ -160,6 +160,7 @@
 <div id="modal"></div>
 <div id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const CATS = {
   pass:  {label:'Mots de passe', icon:'🔑', fields:[['name','Site ou application',0],['user','Identifiant / e-mail',0],['pwd','Mot de passe',1],['note','Note',0,1]]},
@@ -559,14 +560,18 @@ function renderMain(){
 }
 function bkReminder(){
   if(!items.length) return '';
+  if(onCloud() && !items.some(it=>filesOfItem(it).some(id=>!fa[id]))) return gdOn() ? '' : gdOffBanner();
   const hasFiles=items.some(it=>filesOfItem(it).length>0);
   const f=parseInt(localStorage.getItem('coffre_lastfull')||'0'), l=parseInt(localStorage.getItem('coffre_lastbk')||'0');
   const last = hasFiles ? f : Math.max(f,l);
   if(last && (Date.now()-last) < 30*24*3600*1000) return '';
   if(onCloud()){
-    if(!hasFiles) return '';
+    const localOnly=items.some(it=>filesOfItem(it).some(id=>!fa[id]));
+    if(!hasFiles || !localOnly) return gdOn() ? '' : gdOffBanner();
     return `<div class="warn" style="margin-top:12px">✓ Tes textes sont sauvegardés en ligne automatiquement. Seules les photos restent sur ce téléphone : pense à faire une sauvegarde de temps en temps.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
   }
+  if(PHONE && gsUrl()){ const t=parseInt(gdGet('coffre_gd_last')||'0',10); if(t && Date.now()-t < 14*24*3600*1000) return ''; }
+  if(PHONE && !gsUrl()) return `<div class="warn" style="margin-top:12px">💾 Active la sauvegarde automatique sur ton Google Drive : pour l'instant, tout est gardé sur ce téléphone seulement.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Activer</button></div>`;
   return `<div class="warn" style="margin-top:12px">💾 Pense à faire une sauvegarde (avec tes photos) : tout est gardé sur ce téléphone seulement.<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="openSettings()">Faire une sauvegarde</button></div>`;
 }
 function renderWarn(){
@@ -1184,7 +1189,11 @@ function openSettings(){
     <button class="setbtn" onclick="doBackupFull()">💾 Faire une sauvegarde<small>Textes, photos et fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
     <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>L'appli reconnaît toute seule le fichier de sauvegarde.</small></button>
     <input type="file" id="restFile" style="display:none" onchange="onRestoreFile(event)">
+    ${PHONE ? phoneDriveHtml() : `<button class="setbtn" id="gdBtn" onclick="gdToggle()">☁️ Sauvegarde automatique sur Google Drive<small id="gdInfo"></small></button>`}
+    <button class="gen" id="gdNow" onclick="gdUpload(true)" style="display:none">Envoyer une sauvegarde maintenant</button>
+    <button class="gen" id="gdRest" onclick="gdRestore()" style="display:none">Restaurer depuis Google Drive</button>
     <button class="setbtn" onclick="closeModal()" style="margin-top:18px">Fermer</button>`);
+  gdInfo();
 }
 function changePwForm(){
   openModal(`<h2>Nouveau code secret</h2>
@@ -1218,22 +1227,25 @@ async function doBackup(){
     closeModal(); renderWarn();
   }catch(e){ if(!(e&&e.code==='declined')) toast('Échec de la sauvegarde'); }
 }
+async function buildFullBlob(){
+  const rec=await encryptRecord();
+  const entries=[], parts=[]; let off=0;
+  const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>ids.push(id)));
+  for(const id of ids){
+    const r=await fGetAny(id); if(!r) continue;
+    const ct=new Uint8Array(r.ct);
+    entries.push({id, iv:b64(r.iv), k:(r.k?1:0), off, len:ct.length});
+    parts.push(ct); off+=ct.length;
+  }
+  const header=new TextEncoder().encode(JSON.stringify({v:2, record:rec, files:entries}));
+  const lenBuf=new Uint8Array(4); new DataView(lenBuf.buffer).setUint32(0, header.length);
+  const magic=new TextEncoder().encode('COFFRE2\n');
+  return {blob:new Blob([magic, lenBuf, header].concat(parts), {type:'application/octet-stream'}), entries};
+}
 async function doBackupFull(){
   try{
     toast('Préparation de la sauvegarde… patiente un instant');
-    const rec=await encryptRecord();
-    const entries=[], parts=[]; let off=0;
-    const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>ids.push(id)));
-    for(const id of ids){
-      const r=await fGetAny(id); if(!r) continue;
-      const ct=new Uint8Array(r.ct);
-      entries.push({id, iv:b64(r.iv), k:(r.k?1:0), off, len:ct.length});
-      parts.push(ct); off+=ct.length;
-    }
-    const header=new TextEncoder().encode(JSON.stringify({v:2, record:rec, files:entries}));
-    const lenBuf=new Uint8Array(4); new DataView(lenBuf.buffer).setUint32(0, header.length);
-    const magic=new TextEncoder().encode('COFFRE2\n');
-    const blob=new Blob([magic, lenBuf, header].concat(parts), {type:'application/octet-stream'});
+    const {blob, entries}=await buildFullBlob();
     await saveBlobAs('coffre-sauvegarde-complete-'+dateTag()+'.coffre', blob);
     try{ localStorage.setItem('coffre_lastfull', String(Date.now())); localStorage.setItem('coffre_lastbk', String(Date.now())); }catch(e){}
     closeModal(); renderWarn();
@@ -1308,6 +1320,13 @@ async function onRestoreFile(ev){
   pendingFull=null;
   try{
     const head=new TextDecoder().decode(new Uint8Array(await f.slice(0,8).arrayBuffer()));
+    if(head.slice(0,2)==='PK' && typeof JSZip!=='undefined'){
+      const z=await JSZip.loadAsync(f); const e=z.file('coffre/sauvegarde.json'); if(!e) throw 0;
+      const rec=JSON.parse(await e.async('string'));
+      if(!rec.record||!Array.isArray(rec.files)||!rec.record.salt||!rec.record.iv||!rec.record.data) throw 0;
+      pendingRestore=rec.record; pendingFull={json:true, files:rec.files};
+      restoreModal(); return;
+    }
     if(head==='COFFRE2\n'){
       const len=new DataView(await f.slice(8,12).arrayBuffer()).getUint32(0);
       const h=JSON.parse(new TextDecoder().decode(new Uint8Array(await f.slice(12,12+len).arrayBuffer())));
@@ -1316,6 +1335,11 @@ async function onRestoreFile(ev){
       restoreModal(); return;
     }
     const rec=JSON.parse(await f.text());
+    if(rec && rec.record && Array.isArray(rec.files)){
+      if(!rec.record.salt||!rec.record.iv||!rec.record.data) throw 0;
+      pendingRestore=rec.record; pendingFull={json:true, files:rec.files};
+      restoreModal(); return;
+    }
     if(!rec.salt||!rec.iv||!rec.data) throw 0;
     pendingRestore=rec; restoreModal();
   }catch(e){ toast('Ce fichier n\'est pas une sauvegarde valide'); }
@@ -1330,11 +1354,285 @@ async function doRestore(){
       toast('Remise des photos et fichiers…');
       const pf=pendingFull; pendingFull=null;
       for(const e of pf.files){
-        try{ const ct=await pf.file.slice(pf.base+e.off, pf.base+e.off+e.len).arrayBuffer(); await fPut(e.id,{iv:unb64(e.iv), ct, k:(e.k?1:0)}); }catch(x){}
+        try{
+          if(pf.json){ await fPut(e.id,{iv:unb64(e.iv), ct:unb64(e.data).buffer, k:(e.k?1:0)}); continue; }
+          const ct=await pf.file.slice(pf.base+e.off, pf.base+e.off+e.len).arrayBuffer(); await fPut(e.id,{iv:unb64(e.iv), ct, k:(e.k?1:0)});
+        }catch(x){}
       }
     }
     closeModal(); openId=null; renderMain(); await save(); if(keepExp){ try{ await kvSet('keep',{key,exp:keepExp}); }catch(e){} }
   }catch(e){ setErr('Code incorrect pour cette sauvegarde.'); }
+}
+
+/* ---------- Sauvegarde automatique sur Google Drive ---------- */
+const DOCX='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+async function backupDocx(text){
+  if(typeof JSZip==='undefined') throw {code:'nozip', message:'outil de compression non chargé'};
+  const z=new JSZip(); const nf={createFolders:false};
+  z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="json" ContentType="application/json"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>', nf);
+  z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>', nf);
+  z.file('word/document.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Sauvegarde chiffrée du Coffre. Ne modifie pas ce fichier. Pour la restaurer : ouvre le Coffre, touche la roue des réglages, puis « Restaurer une sauvegarde ».</w:t></w:r></w:p></w:body></w:document>', nf);
+  z.file('coffre/sauvegarde.json', text, nf);
+  return z.generateAsync({type:'blob', mimeType:DOCX, compression:'DEFLATE'});
+}
+const GD='Google Drive', GD_FOLDER='Coffre - Sauvegardes', GD_KEEP=30;
+let gdTimer=null, gdBusy=false, gdNs=null, gdTried=false, gdFileArgs=null;
+function gdGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function gdSet(k,v){ try{ if(v==null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} }
+function gdOn(){ return gdGet('coffre_gd_on')==='1'; }
+function gdOffBanner(){ return `<div class="warn" style="margin-top:12px">✓ Ton coffre (textes, photos et fichiers) est sauvegardé en ligne automatiquement. Pour avoir aussi une copie dans ton Google Drive :<br><button type="button" class="primary" style="margin-top:10px; padding:11px" onclick="gdEnable()">Activer la sauvegarde Google Drive</button></div>`; }
+function gdDoc(){ return (db && uid) ? db.doc('data/users/'+uid+'/drive') : null; }
+async function gdMcp(){ if(!gdTried){ gdTried=true; try{ gdNs=(typeof claude!=='undefined' && claude && claude.use) ? await claude.use('mcp') : null; }catch(e){ gdNs=null; } } return gdNs; }
+async function gdCall(tool,input){
+  const m=await gdMcp(); if(!m) throw {code:'unavailable'};
+  if(!(input && input.base64Content)) gdStep=tool;
+  let r;
+  try{ r=await m.callTool(GD, tool, input, {cache:false}); }
+  catch(e){
+    if(e && (e.code==='upstream_error' || e.code==='server_unavailable')){ await new Promise(z=>setTimeout(z,2500)); r=await m.callTool(GD, tool, input, {cache:false}); }
+    else throw e;
+  }
+  if(r && r.isError){ const t=((r.content||[]).map(x=>x.text||'').join(' ')).slice(0,80); throw {code:'tool_error', message:t}; }
+  return (r && r.payload!==undefined) ? r.payload : r;
+}
+function dateTimeTag(){ const d=new Date(), p=n=>String(n).padStart(2,'0'); return dateTag()+'-'+p(d.getHours())+'h'+p(d.getMinutes())+'-'+p(d.getSeconds()); }
+async function contentSig(){
+  const s=JSON.stringify(items.map(i=>{ const o=Object.assign({},i); delete o.locked; return o; }));
+  return b64(await crypto.subtle.digest('SHA-256', enc.encode(s)));
+}
+async function gdFolder(){
+  let id=gdGet('coffre_gd_folder'); if(id) return id;
+  const r=await gdCall('search_files',{query:"title = '"+GD_FOLDER+"' and mimeType = 'application/vnd.google-apps.folder' and owner = 'me'", excludeContentSnippets:true});
+  const f=((r&&r.files)||[])[0];
+  if(f && f.id) id=f.id;
+  else { const c=await gdCall('create_file',{title:GD_FOLDER, contentMimeType:'application/vnd.google-apps.folder'}); id=c && c.id; }
+  if(!id) throw {code:'nofolder'};
+  gdSet('coffre_gd_folder',id); return id;
+}
+async function buildBackupJson(){
+  const rec=await encryptRecord(); const files=[];
+  const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>ids.push(id)));
+  for(const id of ids){ const r=await fGetAny(id); if(!r) continue; files.push({id, iv:b64(r.iv), k:(r.k?1:0), data:b64(r.ct)}); }
+  return {text:JSON.stringify({v:3, app:'Coffre', record:rec, files}), count:files.length};
+}
+async function gdPrune(folder){
+  const L=(await gdSearchAll("parentId = '"+folder+"' and title contains 'coffre-sauvegarde-' and mimeType != 'application/vnd.google-apps.folder'")).filter(x=>x.id && x.title).sort((a,b)=>b.title.localeCompare(a.title));
+  for(const x of L.slice(GD_KEEP)){ try{ await gdCall('trash_file',{fileId:x.id}); }catch(e){} }
+}
+function gdErrText(e){
+  const c=e && e.code;
+  if(c==='unavailable' || c==='server_not_connected' || c==='not_connected') return 'Google Drive n\'est pas connecté à Claude sur cet appareil.';
+  if(c==='consent_required' || c==='not_granted' || c==='denied') return 'Autorise l\'accès à Google Drive quand Claude te le demande, puis réessaie.';
+  if(!navigator.onLine) return 'Pas de connexion : l\'envoi se fera dès que tu auras internet.';
+  return 'Échec de l\'envoi sur Google Drive. Réessaie dans un moment.'+gdDiag(e);
+}
+let gdStep='';
+function gdDiag(e){ const c=(e&&e.code)||(e&&e.name)||'?'; const m=String((e&&e.message)||'').slice(0,400); return ' ['+gdStep+' · '+c+(m?' · '+m:'')+']'; }
+function gdInfo(msg, ok){
+  const el=document.getElementById('gdInfo'), now=document.getElementById('gdNow'); if(!el) return;
+  if(now) now.style.display = gdOn() ? '' : 'none';
+  const rs=document.getElementById('gdRest'); if(rs) rs.style.display = gdOn() ? '' : 'none';
+  if(msg){ el.textContent=msg; el.style.color= ok ? 'var(--green)' : 'var(--red)'; return; }
+  el.style.color='';
+  if(!gdOn()){ el.textContent='Désactivée. Touche pour l\'activer.'; return; }
+  const t=parseInt(gdGet('coffre_gd_last')||'0',10);
+  el.textContent = 'Activée : copie complète après chaque modification, dossier « '+GD_FOLDER+' » (30 dernières gardées). ' + (t ? 'Dernier envoi : '+new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'.' : 'Pas encore d\'envoi.');
+}
+async function gdSaveSetting(){ const d=gdDoc(); if(d){ try{ await d.set({on:gdOn()?1:0, folder:gdGet('coffre_gd_folder')||''}); }catch(e){} } }
+async function gdEnable(){
+  gdSet('coffre_gd_on','1'); gdSet('coffre_gd_sig',null);
+  if(!document.getElementById('gdInfo')) openSettings();
+  gdInfo(); await gdUpload(true); gdSaveSetting(); renderWarn();
+}
+async function gdToggle(){
+  if(gdOn()){ gdSet('coffre_gd_on',null); gdSet('coffre_gd_pending',null); clearTimeout(gdTimer); gdInfo(); gdSaveSetting(); renderWarn(); toast('Sauvegarde Google Drive désactivée'); }
+  else await gdEnable();
+}
+async function gdSearchAll(query){
+  let out=[], token=null;
+  for(let i=0;i<40;i++){
+    const inp={query, excludeContentSnippets:true, pageSize:100}; if(token) inp.pageToken=token;
+    const r=await gdCall('search_files', inp);
+    const f=(r&&r.files)||[]; out=out.concat(f);
+    token=r && r.nextPageToken; if(!token || !f.length) break;
+  }
+  return out;
+}
+function gdDoneFiles(){ try{ return JSON.parse(gdGet('coffre_gd_files')||'[]'); }catch(e){ return []; } }
+async function gdSubfolder(parent){
+  let id=gdGet('coffre_gd_sub'); if(id) return id;
+  const r=await gdCall('search_files',{query:"title = 'fichiers' and parentId = '"+parent+"' and mimeType = 'application/vnd.google-apps.folder'", excludeContentSnippets:true});
+  const f=((r&&r.files)||[])[0];
+  if(f && f.id) id=f.id;
+  else { const c=await gdCall('create_file',{title:'fichiers', contentMimeType:'application/vnd.google-apps.folder', parentId:parent}); id=c && c.id; }
+  if(!id) throw {code:'nofolder'};
+  gdSet('coffre_gd_sub',id); return id;
+}
+const GD_CH=650000;
+async function gdHasFile(sub,id){
+  const L=(await gdSearchAll("parentId = '"+sub+"' and title contains '"+id+".partie-'")).map(x=>x.title||'');
+  if(!L.length) return false;
+  const m=L[0].match(/-sur-(\d+)\.txt$/); const total=m?parseInt(m[1],10):0;
+  return total>0 && new Set(L).size>=total;
+}
+async function gdUploadFile(sub,id){
+  const r=await fGetAny(id); if(!r) return false;
+  const data=b64(r.ct); const total=Math.max(1,Math.ceil(data.length/GD_CH));
+  for(let i=0;i<total;i++){
+    const part=JSON.stringify({id, iv:b64(r.iv), k:(r.k?1:0), part:i+1, total, data:data.slice(i*GD_CH,(i+1)*GD_CH)});
+    await gdCall('create_file',{title:id+'.partie-'+(i+1)+'-sur-'+total+'.txt', contentMimeType:'text/plain', disableConversionToGoogleType:true, parentId:sub, textContent:part});
+  }
+  return true;
+}
+async function gdUpload(manual){
+  if(!key){ if(manual) gdInfo('Ouvre d\'abord ton coffre.',false); return; }
+  if(gdBusy || (!manual && !gdOn())) return;
+  gdBusy=true; clearTimeout(gdTimer);
+  if(manual) gdInfo('Envoi en cours… (la première fois, les photos prennent un peu de temps)',true);
+  try{
+    collectOpenInline();
+    const sig=await contentSig();
+    if(!manual && sig===gdGet('coffre_gd_sig')){ gdSet('coffre_gd_pending',null); return; }
+    let folder, sub;
+    try{ folder=await gdFolder(); sub=await gdSubfolder(folder); }
+    catch(e0){ if(e0 && (e0.code==='unavailable'||e0.code==='consent_required')) throw e0; gdSet('coffre_gd_folder',null); gdSet('coffre_gd_sub',null); folder=await gdFolder(); sub=await gdSubfolder(folder); }
+    // 1) photos et fichiers : envoyés une seule fois chacun (en morceaux), puis réutilisés
+    const ids=[]; items.forEach(it=>filesOfItem(it).forEach(id=>{ if(ids.indexOf(id)<0) ids.push(id); }));
+    const done=new Set(gdDoneFiles()); let n=0;
+    for(const id of ids){
+      if(done.has(id)) continue;
+      n++; if(manual) gdInfo('Envoi des photos et fichiers… '+n,true);
+      gdStep='photo '+n;
+      if(!(await gdHasFile(sub,id))){ const ok=await gdUploadFile(sub,id); if(!ok) continue; }
+      done.add(id); gdSet('coffre_gd_files', JSON.stringify(Array.from(done)));
+    }
+    // 2) la sauvegarde des fiches (chiffrée), qui indique quelles photos lui appartiennent
+    const rec=await encryptRecord();
+    const text=JSON.stringify({v:4, app:'Coffre', record:rec, fileIds:ids});
+    const name='coffre-sauvegarde-'+dateTimeTag()+'.txt';
+    gdStep='fiches';
+    await gdCall('create_file',{title:name, contentMimeType:'text/plain', disableConversionToGoogleType:true, parentId:folder, textContent:text});
+    gdSet('coffre_gd_sig',sig); gdSet('coffre_gd_last',String(Date.now())); gdSet('coffre_gd_pending',null);
+    gdPrune(folder).catch(()=>{});
+    if(manual) gdInfo('✓ Sauvegarde envoyée sur ton Google Drive (fiches + '+ids.length+' photo(s) ou fichier(s)).',true); else gdInfo();
+  }catch(e){ if(manual) gdInfo(gdErrText(e),false); }
+  finally{ gdBusy=false; }
+}
+async function gdDownloadText(fileId){
+  const r=await gdCall('download_file_content',{fileId});
+  const c=r && (r.content||r.base64Content||r.data); if(!c) throw {code:'empty'};
+  return atob(c);
+}
+async function gdRestore(){
+  if(!key){ gdInfo('Ouvre d\'abord ton coffre.',false); return; }
+  gdInfo('Recherche de la dernière sauvegarde…',true);
+  try{
+    const folder=await gdFolder();
+    const L=(await gdSearchAll("parentId = '"+folder+"' and title contains 'coffre-sauvegarde-' and mimeType != 'application/vnd.google-apps.folder'")).filter(x=>x.id && /\.txt$/.test(x.title||'')).sort((a,b)=>b.title.localeCompare(a.title));
+    if(!L.length){ gdInfo('Aucune sauvegarde trouvée dans ton Google Drive.',false); return; }
+    gdStep='lecture';
+    const data=JSON.parse(await gdDownloadText(L[0].id));
+    if(!data.record || !data.record.salt) throw {code:'format'};
+    const ids=data.fileIds||[];
+    if(ids.length){
+      const sub=await gdSubfolder(folder); let n=0;
+      for(const id of ids){
+        n++; gdInfo('Récupération des photos et fichiers… '+n+' / '+ids.length,true);
+        if(await fGet(id)) continue;
+        const parts=(await gdSearchAll("parentId = '"+sub+"' and title contains '"+id+".partie-'")).filter(x=>x.id);
+        const seen=new Set();
+        const got=[];
+        for(const pf of parts){ if(seen.has(pf.title)) continue; seen.add(pf.title); try{ got.push(JSON.parse(await gdDownloadText(pf.id))); }catch(e){} }
+        got.sort((a,b)=>a.part-b.part);
+        if(!got.length || got.length<got[0].total) continue;
+        await fPut(id,{iv:unb64(got[0].iv), ct:unb64(got.map(g=>g.data).join('')).buffer, k:(got[0].k?1:0)});
+      }
+    }
+    pendingRestore=data.record; pendingFull=null;
+    const when=L[0].title.replace('coffre-sauvegarde-','').replace('.txt','');
+    restoreModal();
+    const w=document.querySelector('#modal .warn'); if(w) w.textContent='Sauvegarde Google Drive du '+when.slice(6,8)+'/'+when.slice(4,6)+'/'+when.slice(0,4)+' à '+when.slice(9,14)+'. Le contenu actuel du coffre sera remplacé par celui de cette sauvegarde.';
+  }catch(e){ gdInfo('Échec de la récupération.'+gdDiag(e),false); }
+}
+function gdSchedule(){
+  if(!gdOn() || !key) return;
+  gdSet('coffre_gd_pending','1');
+  clearTimeout(gdTimer); gdTimer=setTimeout(()=>gdUpload(false), 30000);
+}
+function gdFlushIfPending(){ if(gdOn() && key && gdGet('coffre_gd_pending') && navigator.onLine) gdUpload(false); }
+const __gdSaveOrig=save;
+save=async function(silent){ const r=await __gdSaveOrig(silent); try{ gdSchedule(); }catch(e){} return r; };
+const __gdLockOrig=lock;
+lock=async function(){ if(key && gdOn() && gdGet('coffre_gd_pending')){ try{ await gdUpload(false); }catch(e){} } return __gdLockOrig(); };
+setInterval(gdFlushIfPending, 60000);
+window.addEventListener('online', gdFlushIfPending);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(gdFlushIfPending, 3000); });
+async function gdLoadSetting(){
+  const d=gdDoc(); if(!d) return;
+  try{ const sn=await d.get(); if(sn.exists){ const v=sn.data()||{}; if(v.on && !gdOn()){ gdSet('coffre_gd_on','1'); } if(v.folder && !gdGet('coffre_gd_folder')) gdSet('coffre_gd_folder',v.folder); } }catch(e){}
+}
+
+/* ---------- Appli sur le téléphone : sauvegarde Drive par le script Google (comme Vente) ---------- */
+const PHONE = /github\.io$/.test(location.hostname) || /[?&]phone=1/.test(location.search);
+function gsUrl(){ return (gdGet('coffre_drive_url') || gdGet('vente_drive_url') || '').trim(); }
+function phoneDriveHtml(){
+  return `<label style="margin-top:16px">☁️ Sauvegarde automatique sur Google Drive</label>
+    <div style="display:flex; gap:8px"><input id="gsUrl" placeholder="Colle ici le lien du script Google" style="flex:1; font-size:.8rem" value="${esc(gsUrl())}" onchange="gsSaveUrl()"><button type="button" class="gen" style="margin:0" onclick="gsSaveUrl(); gdUpload(true)">Tester</button></div>
+    <div id="gdInfo" style="font-size:.78rem; color:var(--dim); margin-top:6px; text-align:left"></div>`;
+}
+function gsSaveUrl(){ const e=document.getElementById('gsUrl'); if(!e) return; const v=e.value.trim(); gdSet('coffre_drive_url', v||null); gdInfo(); renderWarn(); }
+function blobToB64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]||''); r.onerror=()=>rej(r.error); r.readAsDataURL(blob); }); }
+if(PHONE){
+  gdOn = function(){ return !!gsUrl(); };
+  gdInfo = function(msg, ok){
+    const el=document.getElementById('gdInfo'); if(!el) return;
+    ['gdNow','gdRest'].forEach(i=>{ const b=document.getElementById(i); if(b) b.style.display='none'; });
+    if(msg){ el.textContent=msg; el.style.color= ok ? 'var(--green)' : 'var(--red)'; return; }
+    el.style.color='var(--dim)';
+    if(!gsUrl()){ el.textContent='Pas encore activée : colle le même lien que dans Vente.'; return; }
+    const t=parseInt(gdGet('coffre_gd_last')||'0',10);
+    el.textContent='Activée : copie complète (fiches, photos, fichiers) après chaque modification, dans « '+GD_FOLDER+' ». '+(t ? 'Dernier envoi : '+new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'.' : 'Pas encore d\'envoi.');
+    if(gdGet('coffre_gd_pending')) el.textContent+=' (modifications en attente d\'envoi)';
+  };
+  gdUpload = async function(manual){
+    if(!key){ if(manual) gdInfo('Ouvre d\'abord ton coffre.',false); return; }
+    const url=gsUrl();
+    if(!url){ if(manual) gdInfo('Colle d\'abord le lien du script Google.',false); return; }
+    if(gdBusy) return;
+    gdBusy=true; clearTimeout(gdTimer);
+    if(manual) gdInfo('Envoi en cours… (quelques secondes avec les photos)',true);
+    try{
+      collectOpenInline();
+      const sig=await contentSig();
+      if(!manual && sig===gdGet('coffre_gd_sig')){ gdSet('coffre_gd_pending',null); return; }
+      const {blob, entries}=await buildFullBlob();
+      const contenu64=await blobToB64(blob);
+      const res=await fetch(url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({nom:'coffre-sauvegarde-complete-'+dateTimeTag()+'.coffre', contenu64, dossier:GD_FOLDER, garder:GD_KEEP})});
+      const txt=(await res.text()).trim();
+      if(txt!=='ok') throw {code:'script', message:txt.slice(0,60)};
+      gdSet('coffre_gd_sig',sig); gdSet('coffre_gd_last',String(Date.now())); gdSet('coffre_gd_pending',null);
+      if(manual) gdInfo('✓ Sauvegarde envoyée sur ton Google Drive ('+entries.length+' photo(s) ou fichier(s) inclus).',true); else gdInfo();
+      renderWarn();
+    }catch(e){
+      if(manual) gdInfo(!navigator.onLine ? 'Pas de connexion : l\'envoi se fera dès que tu auras internet.' : (e && e.code==='script') ? 'Le script Google doit être mis à jour (voir la conversation avec Claude).' : 'Échec de l\'envoi : vérifie le lien du script.', false);
+    }finally{ gdBusy=false; }
+  };
+  // copie complète dans les Téléchargements du téléphone, au plus toutes les 8 h, après une modification
+  const __phSave=save;
+  save=async function(silent){ const r=await __phSave(silent); try{ gdSet('coffre_dirty','1'); }catch(e){} return r; };
+  let __phBusy=false;
+  document.addEventListener('pointerup', async ()=>{
+    if(!key || __phBusy || gdGet('coffre_dirty')!=='1') return;
+    const last=parseInt(gdGet('coffre_lastfull')||'0',10);
+    if(Date.now()-last < 8*3600*1000) return;
+    __phBusy=true;
+    try{
+      const {blob}=await buildFullBlob();
+      await saveBlobAs('coffre-sauvegarde-complete-'+dateTimeTag()+'.coffre', blob);
+      gdSet('coffre_lastfull',String(Date.now())); gdSet('coffre_lastbk',String(Date.now())); gdSet('coffre_dirty',null);
+      toast('✓ Sauvegarde automatique sur le téléphone');
+    }catch(e){} finally{ __phBusy=false; }
+  }, true);
 }
 
 /* ---------- Démarrage ---------- */
@@ -1349,10 +1647,10 @@ function renderGoOnline(){
   setTimeout(()=>{ try{ location.href=ONLINE_URL; }catch(e){} }, 400);
 }
 (async function boot(){
-  if(/github\.io$/.test(location.hostname) && !/telephone=1/.test(location.search)){ renderGoOnline(); return; }
   // demander au navigateur de ne jamais effacer les données de Coffre tout seul
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   await initStore();
+  await gdLoadSetting();
   record = await loadRecord();
   if(record){
     // si le coffre n'existait que sur cet appareil, on le copie aussi en ligne
