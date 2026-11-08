@@ -46,6 +46,12 @@ android {
             manifestPlaceholders = [authScheme: "frmanuclasseur"]
             buildConfigField "String", "AUTH_SCHEME", '"frmanuclasseur"'
         }
+        metrodo {
+            dimension "appli"
+            applicationId "fr.manu.metrodo"
+            resValue "string", "app_name", "Métro Dodo"
+            buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/metro-dodo/"'
+        }
         poker {
             dimension "appli"
             applicationId "fr.manu.poker"

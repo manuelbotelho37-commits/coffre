@@ -1,4 +1,4 @@
-name: Applis Android (Coffre, Dépenses, Vente, Poker, Classeur)
+name: Applis Android (Coffre, Dépenses, Vente, Poker, Classeur, Métro Dodo)
 
 on:
   workflow_dispatch:
@@ -67,7 +67,7 @@ jobs:
           gradle-version: '8.9'
 
       - name: Build APKs
-        run: gradle assembleCoffreDebug assembleDepensesDebug assembleVenteDebug assemblePokerDebug assembleClasseurDebug
+        run: gradle assembleCoffreDebug assembleDepensesDebug assembleVenteDebug assemblePokerDebug assembleClasseurDebug assembleMetrodoDebug
 
       - name: Publier les APK (liens de téléchargement fixes)
         env:
@@ -78,5 +78,6 @@ jobs:
           cp app/build/outputs/apk/vente/debug/app-vente-debug.apk Vente.apk
           cp app/build/outputs/apk/poker/debug/app-poker-debug.apk Poker.apk
           cp app/build/outputs/apk/classeur/debug/app-classeur-debug.apk Classeur.apk
+          cp app/build/outputs/apk/metrodo/debug/app-metrodo-debug.apk MetroDodo.apk
           gh release view applis-android >/dev/null 2>&1 || gh release create applis-android --title "Applis Android" --notes "Coffre.apk, Depenses.apk et Vente.apk : les vraies applis, avec leurs données rangées dans l'appli."
-          gh release upload applis-android Coffre.apk Depenses.apk Vente.apk Poker.apk Classeur.apk --clobber
+          gh release upload applis-android Coffre.apk Depenses.apk Vente.apk Poker.apk Classeur.apk MetroDodo.apk --clobber
