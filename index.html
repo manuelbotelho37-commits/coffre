@@ -187,11 +187,11 @@ function fmtExp(t){ return new Date(t).toLocaleString('fr-FR',{weekday:'long',ho
 async function setKeep(on){
   clearTimeout(keepT);
   if(on){
-    const exp = keepExp || (Date.now()+24*3600*1000);
+    const exp = keepExp || (Date.now()+100*365*24*3600*1000); // « Ne plus demander le code » : sans fin, jusqu'à ce que Manu le désactive
     await kvSet('keep', {key, exp});
     keepExp = exp;
     clearTimeout(lockTimer);
-    keepT = setTimeout(lock, Math.max(1000, exp-Date.now()));
+    if(exp-Date.now() < 2e9) keepT = setTimeout(lock, Math.max(1000, exp-Date.now()));
   } else {
     await kvDel('keep'); keepExp = 0; resetTimer();
   }
@@ -200,12 +200,12 @@ async function setKeep(on){
 async function toggleKeep(){
   try{
     if(keepExp){ await setKeep(false); toast('Le code sera redemandé'); }
-    else { await setKeep(true); toast('Déverrouillé pendant 24 h'); }
+    else { await setKeep(true); toast('Le code ne sera plus demandé'); }
   }catch(e){ keepExp=0; renderKeep(); toast('Impossible sur cet appareil'); }
 }
 function renderKeep(){
   const el=$('#keepRow'); if(!el) return;
-  el.innerHTML = `<div><b>Rester déverrouillé 24 h</b><span>${keepExp ? 'Actif jusqu\'à '+esc(fmtExp(keepExp))+'. Le code n\'est pas demandé. Quiconque a ton appareil peut ouvrir le coffre.' : 'Désactivé : le code est demandé après 2 minutes d\'inactivité.'}</span></div><div class="sw ${keepExp?'on':''}"><i></i></div>`;
+  el.innerHTML = `<div><b>Ne plus demander le code</b><span>${keepExp ? (keepExp-Date.now() > 400*24*3600*1000 ? 'Activé : le Coffre s\'ouvre sans code. Quiconque a ton téléphone peut l\'ouvrir. Garde quand même ton code sur papier : il sert pour remettre une sauvegarde.' : 'Actif jusqu\'à '+esc(fmtExp(keepExp))+'. Le code n\'est pas demandé.') : 'Désactivé : le code est demandé après 2 minutes d\'inactivité.'}</span></div><div class="sw ${keepExp?'on':''}"><i></i></div>`;
 }
 const normCode = v => String(v||'').replace(/[\s-]/g,'');
 let strongFlag=false, lkT=null;
@@ -1664,7 +1664,7 @@ function renderGoOnline(){
       if(kv && kv.exp>Date.now()){
         try{
           items = await decryptRecord(record, kv.key); items.forEach(i=>{i.locked=true;}); strongFlag=!!record.s; key=kv.key; salt=unb64(record.salt); iters=record.it||310000;
-          keepExp=kv.exp; keepT=setTimeout(lock, Math.max(1000, kv.exp-Date.now()));
+          keepExp=kv.exp; if(kv.exp-Date.now() < 2e9) keepT=setTimeout(lock, Math.max(1000, kv.exp-Date.now()));
           try{ await initDataKey(); }catch(e){}
           renderMain(); return;
         }catch(e){ await kvDel('keep'); }
