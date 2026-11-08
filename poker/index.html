@@ -277,6 +277,7 @@ html,body{background-color:#09151F!important; overscroll-behavior:none}
 const $ = (s, el=document) => el.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2, 10);
 const KEY = 'pokerwin_v1';
+const IN_CLAUDE = /claude\.ai|claudeusercontent/.test(location.hostname);
 
 /* ---------- icônes ---------- */
 const ICONS = {
@@ -741,7 +742,7 @@ function welcomeHTML(){
     <div class="box" style="text-align:left"><label class="f">Ton prénom</label><input class="in" id="wName" placeholder="Ex. Thomas" autocomplete="given-name" onkeydown="if(event.key==='Enter')startApp()">
     <div id="wErr" class="err" style="margin-top:6px"></div>
     <button class="btn solid block" style="margin-top:12px;padding:16px 20px;font-size:1.1rem" onclick="startApp()">Commencer</button></div>
-    <div class="dim" style="font-size:.85rem">${cloudOK? '✓ Tes données sont sauvegardées sur ton compte Claude.' : 'Conseil : connecte-toi à ton compte Claude (gratuit) pour retrouver tes sessions sur tous tes appareils.'}</div></div>`;
+    <div class="dim" style="font-size:.85rem">${cloudOK? '✓ Tes données sont sauvegardées sur ton compte Claude.' : ''}</div></div>`;
 }
 function startApp(){
   const n = ($('#wName').value||'').trim();
@@ -872,8 +873,8 @@ function bkMaint(){
   const places = S.places.map(p=>`<div class="item"><div><div class="a">${esc(p.name)}</div><div class="b">${esc(p.kind||'')}</div></div><button class="btn sm danger" onclick="delPlace('${p.id}')">Supprimer</button></div>`).join('') || '<div class="dim">Aucun lieu enregistré.</div>';
   const games = S.games.map((g,i)=>`<div class="item"><div class="a">${esc(g)}</div><button class="btn sm danger" onclick="delGame(${i})">Supprimer</button></div>`).join('') || '<div class="dim">Aucun jeu enregistré.</div>';
   setTimeout(backupsHTML, 0);
-  return `<div class="box"><h3>Sauvegarde sur mon compte</h3><div class="${cloudOK?'gain':'loss'}" style="font-weight:600">${cloudOK?'Active : chaque changement est sauvegardé tout de suite, et mes sessions se retrouvent sur tous mes appareils.':'Inactive pour l\'instant : mes sessions restent sur cet appareil.'}</div><div class="dim" id="saveInfo" style="font-size:.88rem;margin-top:6px">${saveInfoText()}</div></div>
-  <div class="box"><h3>Sauvegardes automatiques (une par jour)</h3><p class="dim" style="margin:0 0 10px;font-size:.9rem">Chaque jour, une copie complète de tes données est gardée sur ton compte, pendant 30 jours. En cas d'erreur, tu peux revenir à un jour précédent.</p><div id="bkList"><div class="dim">Chargement…</div></div></div>
+  return `${!IN_CLAUDE?'':`<div class="box"><h3>Sauvegarde sur mon compte</h3><div class="${cloudOK?'gain':'loss'}" style="font-weight:600">${cloudOK?'Active : chaque changement est sauvegardé tout de suite, et mes sessions se retrouvent sur tous mes appareils.':'Inactive pour l\'instant : mes sessions restent sur cet appareil.'}</div><div class="dim" id="saveInfo" style="font-size:.88rem;margin-top:6px">${saveInfoText()}</div></div>
+  <div class="box"><h3>Sauvegardes automatiques (une par jour)</h3><p class="dim" style="margin:0 0 10px;font-size:.9rem">Chaque jour, une copie complète de tes données est gardée sur ton compte, pendant 30 jours. En cas d'erreur, tu peux revenir à un jour précédent.</p><div id="bkList"><div class="dim">Chargement…</div></div></div>`}
   <div class="box"><h3>☁️ Sauvegarde automatique sur Google Drive</h3><p class="dim" style="margin:0 0 10px;font-size:.9rem">Une copie part sur ton Google Drive (dossier « Poker - Sauvegardes ») après chaque changement.</p>
     <div class="row"><input class="in" id="drvUrl" placeholder="Colle ici le lien du script Google" value="${esc(drvUrl())}" onchange="drvSaveUrl()"><button class="btn solid" style="flex:none" onclick="drvSaveUrl();drvUpload(true)">Tester</button></div>
     <div id="drvInfo" class="dim" style="font-size:.88rem;margin-top:8px">${esc(drvInfoTxt())}</div></div>
