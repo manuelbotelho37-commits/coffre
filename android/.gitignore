@@ -1,0 +1,4 @@
+.signing/
+build/
+.gradle/
+app/build/

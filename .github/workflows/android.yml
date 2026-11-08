@@ -1,0 +1,80 @@
+name: Applis Android (Coffre, Dépenses, Vente)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Restore signing key
+        id: signing-cache
+        uses: actions/cache@v4
+        with:
+          path: android/.signing/applis.keystore
+          key: applis-signing-key-v1
+
+      - name: Create signing key
+        if: steps.signing-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Une appli déjà publiée doit garder la même clé, sinon la mise à jour ne s'installe pas.
+          if gh release view applis-android >/dev/null 2>&1; then
+            echo "::error::Clé de signature introuvable alors que les applis sont déjà publiées. Arrêt pour ne pas publier une version impossible à installer."
+            exit 1
+          fi
+          mkdir -p .signing
+          keytool -genkeypair -v \
+            -keystore .signing/applis.keystore \
+            -storepass Applis2026 \
+            -keypass Applis2026 \
+            -alias applis \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Applis Manu, O=Manuel Botelho, C=FR"
+
+      - name: Install Android platform
+        run: |
+          SDKMANAGER=/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager
+          yes | $SDKMANAGER --licenses >/dev/null || true
+          $SDKMANAGER "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build APKs
+        run: gradle assembleCoffreDebug assembleDepensesDebug assembleVenteDebug
+
+      - name: Publier les APK (liens de téléchargement fixes)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/coffre/debug/app-coffre-debug.apk Coffre.apk
+          cp app/build/outputs/apk/depenses/debug/app-depenses-debug.apk Depenses.apk
+          cp app/build/outputs/apk/vente/debug/app-vente-debug.apk Vente.apk
+          gh release view applis-android >/dev/null 2>&1 || gh release create applis-android --title "Applis Android" --notes "Coffre.apk, Depenses.apk et Vente.apk : les vraies applis, avec leurs données rangées dans l'appli."
+          gh release upload applis-android Coffre.apk Depenses.apk Vente.apk --clobber

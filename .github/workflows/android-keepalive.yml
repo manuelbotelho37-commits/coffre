@@ -1,0 +1,20 @@
+name: Garder la clé des applis Android
+
+# GitHub efface un cache non utilisé pendant 7 jours. Ce travail relit la clé
+# de signature tous les 3 jours pour qu'elle ne soit jamais effacée : sans elle,
+# les mises à jour ne pourraient plus s'installer par-dessus les applis.
+on:
+  schedule:
+    - cron: '23 6 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Relire la clé de signature
+        uses: actions/cache/restore@v4
+        with:
+          path: android/.signing/applis.keystore
+          key: applis-signing-key-v1
+          fail-on-cache-miss: true

@@ -1,0 +1,67 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'fr.manu.applis'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 29
+        targetSdk 34
+        versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
+        versionName "1.0"
+    }
+
+    // Une appli par page : chacune a ses propres données, rangées dans l'appli (pas dans Chrome).
+    flavorDimensions = ["appli"]
+    productFlavors {
+        coffre {
+            dimension "appli"
+            applicationId "fr.manu.coffre"
+            resValue "string", "app_name", "Coffre"
+            buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/"'
+        }
+        depenses {
+            dimension "appli"
+            applicationId "fr.manu.depenses"
+            resValue "string", "app_name", "Dépenses"
+            buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/depenses/"'
+        }
+        vente {
+            dimension "appli"
+            applicationId "fr.manu.vente"
+            resValue "string", "app_name", "Vente"
+            buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/vente/"'
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        debug {
+            storeFile rootProject.file('.signing/applis.keystore')
+            storePassword 'Applis2026'
+            keyAlias 'applis'
+            keyPassword 'Applis2026'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
