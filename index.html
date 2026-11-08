@@ -199,9 +199,9 @@ async function setKeep(on){
 }
 async function toggleKeep(){
   try{
-    if(keepExp){ await setKeep(false); toast('Le code sera redemandé'); }
-    else { await setKeep(true); toast('Le code ne sera plus demandé'); }
-    renderMain();
+    if(!askCode()){ if(!confirm("Ajouter un code ?\n\nLe Coffre demandera ton code secret à chaque ouverture.")) return; try{localStorage.setItem('coffre_ask_code','1');}catch(e){} await setKeep(false); toast('Le code sera demandé'); }
+    else { try{localStorage.removeItem('coffre_ask_code');}catch(e){} keepExp=0; await setKeep(true); toast('Plus de code demandé'); }
+    closeModal(); renderMain();
   }catch(e){ keepExp=0; renderKeep(); toast('Impossible sur cet appareil'); }
 }
 function renderKeep(){
@@ -478,7 +478,8 @@ document.addEventListener('visibilitychange', ()=>{
   else if(key && !keepExp && hiddenAt && Date.now()-hiddenAt>60000){ lock(); }
 });
 // mode « sans code » choisi par Manu : rien ne doit verrouiller le Coffre, pas même un appui par erreur
-const noCode = () => !!keepExp && keepExp-Date.now() > 400*24*3600*1000;
+const askCode = () => { try{ return localStorage.getItem('coffre_ask_code')==='1'; }catch(e){ return false; } };
+const noCode = () => !askCode();
 async function lock(){
   if(noCode()) return;
   if(key){ try{ clearTimeout(edT); collectOpenInline(); items.forEach(i=>{i.locked=true;}); await save(true); }catch(e){} }
@@ -551,10 +552,11 @@ async function doUnlock(){
 }
 
 function renderMain(){
+  if(key && noCode() && !(keepExp-Date.now() > 400*24*3600*1000)){ keepExp=0; setKeep(true).catch(()=>{}); } // pas de code par défaut (choix de Manu)
   $('#app').innerHTML = `<div class="wrap" id="homewrap">
     <header><h1>Coffre</h1><div class="hbtn"><button onclick="openSettings()">⚙️</button>${noCode()?'':'<button onclick="lock()">🔒 Verrouiller</button>'}</div></header>
     <div id="warnRow"></div>
-    <div class="keep" id="keepRow" onclick="toggleKeep()"></div>
+    
     <input type="search" id="q" placeholder="Rechercher…" value="${esc(q)}" oninput="q=this.value; renderList()">
     <div id="list"></div>
   </div>
@@ -1189,6 +1191,7 @@ function openSettings(){
     <p style="color:var(--dim); font-size:.8rem; margin:4px 0 6px">${esc(lastBkText())}</p>
     <button class="setbtn" onclick="importOldForm()">📥 Ajouter les notes d'un autre Coffre<small>Ajoute ses dossiers sans rien effacer ici.</small></button>
     <button class="setbtn" onclick="copyForOther()">📋 Copier tout pour un autre Coffre<small>Ensuite, dans l'autre Coffre : ⚙️ puis « Ajouter les notes d'un autre Coffre ».</small></button>
+    <button class="setbtn" onclick="toggleKeep()">${askCode()?'🔓 Ne plus demander de code<small>Le Coffre s\'ouvrira directement.</small>':'🔒 Ajouter un code<small>Le Coffre demandera ton code secret à chaque ouverture.</small>'}</button>
     <button class="setbtn" onclick="changePwForm()">🔑 Changer le code secret</button>
     <button class="setbtn" onclick="doBackupFull()">💾 Faire une sauvegarde<small>Textes, photos et fichiers, le tout chiffré. Le fichier peut être gros.</small></button>
     <button class="setbtn" onclick="document.getElementById('restFile').click()">♻️ Restaurer une sauvegarde<small>L'appli reconnaît toute seule le fichier de sauvegarde.</small></button>
