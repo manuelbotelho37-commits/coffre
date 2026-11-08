@@ -201,6 +201,7 @@ async function toggleKeep(){
   try{
     if(keepExp){ await setKeep(false); toast('Le code sera redemandé'); }
     else { await setKeep(true); toast('Le code ne sera plus demandé'); }
+    renderMain();
   }catch(e){ keepExp=0; renderKeep(); toast('Impossible sur cet appareil'); }
 }
 function renderKeep(){
@@ -476,7 +477,10 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){ hiddenAt=Date.now(); }
   else if(key && !keepExp && hiddenAt && Date.now()-hiddenAt>60000){ lock(); }
 });
+// mode « sans code » choisi par Manu : rien ne doit verrouiller le Coffre, pas même un appui par erreur
+const noCode = () => !!keepExp && keepExp-Date.now() > 400*24*3600*1000;
 async function lock(){
+  if(noCode()) return;
   if(key){ try{ clearTimeout(edT); collectOpenInline(); items.forEach(i=>{i.locked=true;}); await save(true); }catch(e){} }
   kvDel('keep'); keepExp=0; clearTimeout(keepT);
   urlCache.forEach(u=>{ try{URL.revokeObjectURL(u);}catch(e){} }); urlCache.clear();
@@ -548,7 +552,7 @@ async function doUnlock(){
 
 function renderMain(){
   $('#app').innerHTML = `<div class="wrap" id="homewrap">
-    <header><h1>Coffre</h1><div class="hbtn"><button onclick="openSettings()">⚙️</button><button onclick="lock()">🔒 Verrouiller</button></div></header>
+    <header><h1>Coffre</h1><div class="hbtn"><button onclick="openSettings()">⚙️</button>${noCode()?'':'<button onclick="lock()">🔒 Verrouiller</button>'}</div></header>
     <div id="warnRow"></div>
     <div class="keep" id="keepRow" onclick="toggleKeep()"></div>
     <input type="search" id="q" placeholder="Rechercher…" value="${esc(q)}" oninput="q=this.value; renderList()">
