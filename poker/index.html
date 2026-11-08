@@ -1482,13 +1482,19 @@ function anaBoxHTML(h){
       : `<button class="btn solid" onclick="analyzeHand('${h.id}')">🧠 Quelle est la bonne action ?</button>`}</div></div>`;
 }
 let anaCtl = null;
+/* dans l'appli du téléphone : la main est envoyée à Claude (appli Claude ou claude.ai), question déjà écrite */
+function askClaudeApp(prompt){
+  try{ navigator.clipboard && navigator.clipboard.writeText(prompt).catch(()=>{}); }catch(e){}
+  toast('Ouverture de Claude…');
+  setTimeout(()=>{ location.href = 'https://claude.ai/new?q=' + encodeURIComponent(prompt); }, 300);
+}
 async function analyzeHand(id){
   const h = S.hands.find(x=>x.id===id); if(!h) return;
   const out = $('#anaOut'), row = $('#anaRow'), err = $('#anaErr');
   err.textContent = '';
   let sample = null;
   try{ sample = window.claude && window.claude.use ? await window.claude.use('sample') : null; }catch(e){}
-  if(!sample){ err.textContent = 'L\'analyse n\'est pas disponible ici. Ouvre l\'appli depuis claude.ai.'; viewHandRow(h); return; }
+  if(!sample){ askClaudeApp(handPrompt(h)); return; }
   anaCtl = new AbortController();
   out.innerHTML = '<span class="dim">Claude réfléchit… (de 10 secondes à 1 minute)</span>';
   row.innerHTML = `<button class="btn" onclick="anaCtl&&anaCtl.abort()">Arrêter</button>`;
@@ -1513,7 +1519,7 @@ async function analyzeDraft(){
   let sample = null;
   try{ sample = window.claude && window.claude.use ? await window.claude.use('sample') : null; }catch(e){}
   const btn = `<button class="btn solid" onclick="analyzeDraft()">🧠 Quoi faire ?</button>`;
-  if(!sample){ err.textContent = 'L\'analyse n\'est pas disponible ici. Ouvre l\'appli depuis claude.ai.'; return; }
+  if(!sample){ askClaudeApp(handPrompt(d)); return; }
   anaCtl = new AbortController();
   out.innerHTML = '<span class="dim">Claude réfléchit… (de 10 secondes à 1 minute)</span>';
   row.innerHTML = `<button class="btn" onclick="anaCtl&&anaCtl.abort()">Arrêter</button>`;
