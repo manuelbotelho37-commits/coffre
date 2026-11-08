@@ -16,6 +16,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import org.json.JSONObject
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -55,6 +56,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         web.addJavascriptInterface(Saver(), "AndroidSave")
+        // Google interdit de se connecter à Gmail dans une appli comme celle-ci :
+        // la connexion se fait dans Chrome, puis Chrome renvoie l'autorisation ici.
+        if (BuildConfig.AUTH_SCHEME != "frmanuapp") web.addJavascriptInterface(Auth(), "AndroidAuth")
         // Les boutons « Sauvegarder » de la page créent un fichier dans le navigateur :
         // ici on le range dans Téléchargements, comme le faisait Chrome.
         val saveHook = """
@@ -115,6 +119,35 @@ class MainActivity : AppCompatActivity() {
         })
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState) else web.loadUrl(BuildConfig.START_URL)
+        intent?.let { handleAuth(it) }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleAuth(intent)
+    }
+
+    private fun handleAuth(intent: Intent) {
+        val uri = intent.data ?: return
+        if (uri.scheme != BuildConfig.AUTH_SCHEME) return
+        val t = uri.getQueryParameter("t") ?: return
+        val e = (uri.getQueryParameter("e") ?: "3600").toIntOrNull() ?: 3600
+        val js = "window.__pendingTok=[${JSONObject.quote(t)},$e,Date.now()];window.__gTok&&window.__gTok(${JSONObject.quote(t)},$e);"
+        web.post { web.evaluateJavascript(js, null) }
+    }
+
+    inner class Auth {
+        @JavascriptInterface
+        fun scheme(): String = BuildConfig.AUTH_SCHEME
+
+        @JavascriptInterface
+        fun start(url: String) {
+            val uri = Uri.parse(url)
+            val i = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try { startActivity(Intent(i).setPackage("com.android.chrome")) } catch (_: Exception) {
+                try { startActivity(i) } catch (_: Exception) {}
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

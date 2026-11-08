@@ -12,6 +12,9 @@ android {
         targetSdk 34
         versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
         versionName "1.0"
+        // adresse de retour après la connexion Gmail (utile seulement pour le Classeur)
+        manifestPlaceholders = [authScheme: "frmanuapp"]
+        buildConfigField "String", "AUTH_SCHEME", '"frmanuapp"'
     }
 
     // Une appli par page : chacune a ses propres données, rangées dans l'appli (pas dans Chrome).
@@ -34,6 +37,14 @@ android {
             applicationId "fr.manu.vente"
             resValue "string", "app_name", "Vente"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/vente/"'
+        }
+        classeur {
+            dimension "appli"
+            applicationId "fr.manu.classeur"
+            resValue "string", "app_name", "Classeur"
+            buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/classeur/"'
+            manifestPlaceholders = [authScheme: "frmanuclasseur"]
+            buildConfigField "String", "AUTH_SCHEME", '"frmanuclasseur"'
         }
         poker {
             dimension "appli"
