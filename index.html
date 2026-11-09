@@ -137,6 +137,20 @@
   .frow.ro .fthumb{cursor:default; pointer-events:none;}
   .fopen{color:var(--dim); font-size:.85rem; padding-right:4px;}
   .flro{margin-top:4px;}
+  .frow.ro .fname.canview{cursor:pointer;}
+  /* lecteur de fichiers (PDF, texte, vidéo) */
+  .pv{position:fixed; inset:0; z-index:30; background:#0e1115; display:flex; flex-direction:column;}
+  .pvbar{display:flex; align-items:center; gap:8px; padding:calc(8px + env(safe-area-inset-top)) 10px 8px; background:var(--surface); border-bottom:1px solid var(--line);}
+  .pvbar button{margin:0; width:auto; min-width:44px; padding:8px 12px; font-size:1.05rem;}
+  .pvt{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;}
+  .pvpg{color:var(--dim); font-size:.85rem; white-space:nowrap;}
+  .pvs{flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding:10px 0 30px;}
+  .pvpages{margin:0 auto;}
+  .pvp{position:relative; margin:0 auto 10px; background:#fff; box-shadow:0 1px 6px rgba(0,0,0,.5);}
+  .pvp canvas{display:block; width:100%; height:100%;}
+  .pvmsg{color:var(--dim); text-align:center; padding:40px 20px;}
+  .pvtxt{margin:0; padding:14px; white-space:pre-wrap; word-break:break-word; color:var(--text); font-size:.95rem;}
+  .pvmed{display:block; max-width:100%; max-height:100%; margin:auto;}
   .fgrid{display:flex; flex-direction:column; gap:10px; margin-top:12px; align-items:flex-start;}
   .fimg{max-width:100%; max-height:62vh; width:auto; height:auto; object-fit:contain; border-radius:10px; border:1px solid var(--line); background:var(--surface2); cursor:pointer;}
   .fchip{padding:10px 14px; font-size:.92rem; text-align:left;}
@@ -334,7 +348,7 @@ function toast(t){
   clearTimeout(toastT); toastT=setTimeout(()=>{el.innerHTML='';}, 2600);
 }
 function openModal(html){ $('#modal').innerHTML='<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet">'+html+'</div></div>'; }
-function closeModal(){ $('#modal').innerHTML=''; }
+function closeModal(){ try{ pvDestroy(); }catch(e){} $('#modal').innerHTML=''; }
 function setErr(t){ const e=$('#err'); if(e) e.textContent=t||''; }
 function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function genPassword(){
@@ -468,6 +482,8 @@ function linksHtml(t){
 function openLink(u){ const w=window.open(u,'_blank','noopener'); if(!w){ location.href=u; } }
 
 /* ---------- Verrouillage automatique ---------- */
+// demander au téléphone de ne jamais effacer les fichiers du Coffre pour faire de la place
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
 function resetTimer(){
   clearTimeout(lockTimer);
   if(key && !keepExp) lockTimer=setTimeout(lock, 120000);
@@ -703,11 +719,11 @@ function findMeta(id){
 }
 function filesOfItem(it){ const out=[]; Object.keys(it.f).forEach(k=>{ if(k.indexOf('a_')===0 && Array.isArray(it.f[k])) it.f[k].forEach(m=>out.push(m.id)); }); return out; }
 function fileRowsEdit(fl){
-  return fl.map(m=>`<div class="frow" data-fid="${m.id}">${isImg(m)?`<img class="fthumb" data-fid="${m.id}" data-type="${esc(m.type)}" data-rot="${m.rot||0}" onclick="viewFile('${m.id}')" alt="">`:'<span class="ficon">📄</span>'}<span class="fname" onclick="viewFile('${m.id}')">${esc(m.name)}<small>${fmtSize(m.size)}</small></span><button type="button" class="ren2" onclick="renameFile(this)">Renommer</button><button type="button" class="xdel2" onclick="askDelFile(this)">Supprimer</button></div>`).join('');
+  return fl.map(m=>`<div class="frow" data-fid="${m.id}">${isImg(m)?`<img class="fthumb" data-fid="${m.id}" data-type="${esc(m.type)}" data-rot="${m.rot||0}" onclick="viewFile('${m.id}')" alt="">`:`<span class="ficon" onclick="viewFile('${m.id}')">📄</span>`}<span class="fname" onclick="viewFile('${m.id}')">${esc(m.name)}<small>${fmtSize(m.size)}</small></span><button type="button" class="ren2" onclick="renameFile(this)">Renommer</button><button type="button" class="xdel2" onclick="askDelFile(this)">Supprimer</button></div>`).join('');
 }
 function filesRo(fl){
   if(!fl||!fl.length) return '';
-  return '<div class="flro">'+fl.map(m=>`<div class="frow ro">${isImg(m)?`<img class="fthumb" data-fid="${m.id}" data-type="${esc(m.type)}" data-rot="${m.rot||0}" alt="">`:'<span class="ficon">📄</span>'}<span class="fname" style="cursor:default">${esc(m.name)}<small>${fmtSize(m.size)}</small></span></div>`).join('')+'</div>';
+  return '<div class="flro">'+fl.map(m=>`<div class="frow ro">${isImg(m)?`<img class="fthumb" data-fid="${m.id}" data-type="${esc(m.type)}" data-rot="${m.rot||0}" alt="">`:(fileKind(m)?`<span class="ficon" onclick="viewFile('${m.id}')">📄</span>`:'<span class="ficon">📄</span>')}${(isImg(m)||!fileKind(m))?`<span class="fname" style="cursor:default">`:`<span class="fname canview" onclick="viewFile('${m.id}')">`}${esc(m.name)}<small>${fmtSize(m.size)}</small></span></div>`).join('')+'</div>';
 }
 async function onPickFile(inp){
   const blk=inp.closest('.blk'); const files=Array.from(inp.files||[]); inp.value='';
@@ -816,11 +832,142 @@ async function rotateFile(id){
   }catch(e){}
   try{ await save(true); }catch(e){}
 }
+/* --- lecteur intégré : le fichier s'ouvre dans le Coffre, même sans internet --- */
+function fileKind(m){
+  const t=(m.type||'').toLowerCase(), n=(m.name||'').toLowerCase();
+  if(t==='application/pdf' || /\.pdf$/.test(n)) return 'pdf';
+  if(/^video\//.test(t) || /\.(mp4|webm|mov|m4v)$/.test(n)) return 'video';
+  if(/^audio\//.test(t) || /\.(mp3|m4a|aac|ogg|wav|opus)$/.test(n)) return 'audio';
+  if(/^text\//.test(t) || t==='application/json' || /\.(txt|md|csv|json|log)$/.test(n)) return 'text';
+  return '';
+}
+let pv=null, pdfLib=null;
+const PV_ZOOMS=[1,1.5,2,3];
+async function loadPdfLib(){
+  if(pdfLib) return pdfLib;
+  const base=new URL('./pdfjs/', location.href).href;
+  const lib=await import(base+'pdf.min.mjs');
+  lib.GlobalWorkerOptions.workerSrc=base+'pdf.worker.min.mjs';
+  pdfLib={lib, base}; return pdfLib;
+}
+function pvShell(m, extra){
+  $('#modal').innerHTML=`<div class="pv" id="pv"><div class="pvbar">
+    <button type="button" onclick="closeModal()" aria-label="Fermer">←</button>
+    <div class="pvt">${esc(m.name||'')}</div>${extra||''}
+    <button type="button" onclick="downloadFile('${m.id}')" aria-label="Enregistrer dans Téléchargements">⬇</button>
+  </div><div class="pvs" id="pvs"><div class="pvmsg">Ouverture…</div></div></div>`;
+}
+function pvDestroy(){
+  if(!pv) return; const p=pv; pv=null;
+  try{ p.io && p.io.disconnect(); }catch(e){}
+  try{ p.url && URL.revokeObjectURL(p.url); }catch(e){}
+  try{ p.doc && p.doc.destroy(); }catch(e){}
+}
+async function openViewer(m, kind){
+  pvDestroy();
+  const rec=await fGetAny(m.id); if(!rec){ toast('Fichier absent de cet appareil'); return; }
+  const tag={};  // repère de cette ouverture (si on ferme pendant le chargement)
+  if(kind==='pdf'){
+    pvShell(m, `<span class="pvpg" id="pvpg"></span><button type="button" onclick="pvZoom(-1)" aria-label="Plus petit">−</button><button type="button" onclick="pvZoom(1)" aria-label="Plus grand">+</button>`);
+    pv={tag, kind, z:0, pages:[], rendering:new Map()};
+    try{
+      const buf=await decBuf(rec);
+      const {lib, base}=await loadPdfLib();
+      if(!pv || pv.tag!==tag) return;
+      const task=lib.getDocument({data:new Uint8Array(buf), standardFontDataUrl:base+'standard_fonts/', wasmUrl:base+'wasm/', isEvalSupported:false});
+      const doc=await task.promise;
+      if(!pv || pv.tag!==tag){ try{doc.destroy();}catch(e){} return; }
+      pv.doc=doc;
+      for(let i=1;i<=doc.numPages;i++){ const pg=await doc.getPage(i); const vp=pg.getViewport({scale:1}); pv.pages.push({pg, w:vp.width, h:vp.height}); if(!pv || pv.tag!==tag) return; }
+      pvLayout();
+      $('#pvs').addEventListener('scroll', pvPageNum, {passive:true});
+    }catch(e){ const s=$('#pvs'); if(s) s.innerHTML='<div class="pvmsg">Ce PDF ne peut pas s\'afficher.<br><br>Touche ⬇ pour l\'enregistrer sur le téléphone.</div>'; }
+    return;
+  }
+  pvShell(m, '');
+  pv={tag, kind};
+  try{
+    const buf=await decBuf(rec);
+    if(!pv || pv.tag!==tag) return;
+    const s=$('#pvs');
+    if(kind==='text'){
+      const pre=document.createElement('pre'); pre.className='pvtxt'; pre.textContent=new TextDecoder().decode(buf);
+      s.innerHTML=''; s.appendChild(pre);
+    } else {
+      pv.url=URL.createObjectURL(new Blob([buf],{type:m.type||(kind==='video'?'video/mp4':'audio/mpeg')}));
+      s.style.display='flex';
+      s.innerHTML=kind==='video' ? `<video class="pvmed" controls playsinline src="${pv.url}"></video>` : `<audio class="pvmed" controls src="${pv.url}" style="width:92%"></audio>`;
+    }
+  }catch(e){ const s=$('#pvs'); if(s) s.innerHTML='<div class="pvmsg">Ce fichier ne peut pas s\'afficher.</div>'; }
+}
+function pvLayout(keepRatio){
+  const s=$('#pvs'); if(!s || !pv || !pv.doc) return;
+  const ratio=keepRatio!=null ? keepRatio : 0;
+  try{ pv.io && pv.io.disconnect(); }catch(e){}
+  pv.rendering=new Map();
+  const avail=Math.max(200, s.clientWidth-16), z=PV_ZOOMS[pv.z];
+  const box=document.createElement('div'); box.className='pvpages';
+  let maxW=0;
+  pv.pages.forEach((p,i)=>{
+    const cssW=Math.round(avail*z), cssH=Math.round(cssW*p.h/p.w);
+    p.cssW=cssW; p.cssH=cssH; maxW=Math.max(maxW,cssW);
+    const d=document.createElement('div'); d.className='pvp'; d.dataset.i=i; d.style.width=cssW+'px'; d.style.height=cssH+'px';
+    box.appendChild(d);
+  });
+  box.style.width=(maxW+16)+'px'; box.style.padding='0 8px';
+  s.innerHTML=''; s.appendChild(box);
+  if(ratio) s.scrollTop=ratio*s.scrollHeight;
+  pv.io=new IntersectionObserver(ents=>{
+    ents.forEach(en=>{ const i=+en.target.dataset.i; if(en.isIntersecting) pvRender(i, en.target); else pvUnrender(i, en.target); });
+  }, {root:s, rootMargin:'150% 0px'});
+  box.querySelectorAll('.pvp').forEach(d=>pv.io.observe(d));
+  pvPageNum();
+}
+async function pvRender(i, el){
+  if(!pv || !pv.doc || pv.rendering.has(i) || el.querySelector('canvas')) return;
+  const p=pv.pages[i], tag=pv.tag;
+  const dpr=Math.min(window.devicePixelRatio||1, 2);
+  let scale=p.cssW/p.w*dpr;
+  const maxPx=12e6; if(p.w*scale*p.h*scale>maxPx) scale=Math.sqrt(maxPx/(p.w*p.h));
+  const vp=p.pg.getViewport({scale});
+  const c=document.createElement('canvas'); c.width=Math.floor(vp.width); c.height=Math.floor(vp.height);
+  const job=p.pg.render({canvasContext:c.getContext('2d'), viewport:vp});
+  pv.rendering.set(i, job);
+  try{ await job.promise; if(pv && pv.tag===tag && el.isConnected){ el.innerHTML=''; el.appendChild(c); } }
+  catch(e){}
+  finally{ if(pv && pv.rendering) pv.rendering.delete(i); }
+}
+function pvUnrender(i, el){
+  if(!pv) return;
+  const job=pv.rendering.get(i); if(job){ try{ job.cancel(); }catch(e){} pv.rendering.delete(i); }
+  const c=el.querySelector('canvas'); if(c){ c.width=0; c.height=0; el.innerHTML=''; }
+}
+function pvPageNum(){
+  const s=$('#pvs'), out=$('#pvpg'); if(!s || !out || !pv || !pv.pages) return;
+  const mid=s.scrollTop+s.clientHeight/3; let n=1;
+  s.querySelectorAll('.pvp').forEach(d=>{ if(d.offsetTop<=mid) n=+d.dataset.i+1; });
+  out.textContent=n+' / '+pv.pages.length;
+}
+function pvZoom(dir){
+  if(!pv || !pv.doc) return;
+  const nz=Math.max(0, Math.min(PV_ZOOMS.length-1, pv.z+dir)); if(nz===pv.z) return;
+  const s=$('#pvs'); const ratio=s.scrollHeight ? s.scrollTop/s.scrollHeight : 0;
+  pv.z=nz; pv.pages.forEach((p,i)=>{ const el=s.querySelector('.pvp[data-i="'+i+'"]'); if(el) pvUnrender(i, el); });
+  pvLayout(ratio);
+}
+window.addEventListener('resize', ()=>{ if(pv && pv.doc){ const s=$('#pvs'); pvLayout(s && s.scrollHeight ? s.scrollTop/s.scrollHeight : 0); } });
+
 async function viewFile(id){
-  { const lk=items.find(x=>x.id===openId); if(!lk || itemLocked(lk)) return; }
+  const m0=findMeta(id); if(!m0) return;
+  const kind=fileKind(m0);
+  // lire un fichier ne modifie rien : possible même cadenas rouge
+  { const lk=items.find(x=>x.id===openId); if(!lk || (itemLocked(lk) && (isImg(m0) || !kind))) return; }
   collectOpenInline();
   const m=findMeta(id); if(!m) return;
-  if(!isImg(m)){ downloadFile(id); return; }
+  if(!isImg(m)){
+    if(kind){ try{ await openViewer(m, kind); }catch(e){ toast('Ce fichier ne peut pas s\'afficher'); } return; }
+    downloadFile(id); return;
+  }
   const op=items.find(x=>x.id===openId); const canRot=!!(op && !itemLocked(op));
   try{
     const u=await fileUrl(m);
