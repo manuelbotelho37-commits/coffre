@@ -283,9 +283,33 @@ render();
 </script>
 
 <script>
-/* Version appli Android : hors de Claude, la recherche se lance dans Claude, et la sauvegarde Drive se fait côté Claude. */
+/* Version appli Android : hors de Claude, la recherche se lance dans Claude, et la sauvegarde Drive passe par le script Google. */
 (function(){if(window.claude)return;
-  const g=document.querySelector(".tip.gd");if(g)g.style.display="none";
+  /* Sauvegarde Drive par le script Google, comme Coffre, Dépenses, Vente et Poker */
+  const g=document.querySelector(".tip.gd");
+  if(g){g.innerHTML='<div class="gdb" style="cursor:default">☁️ Sauvegarde automatique sur Google Drive<small>Une copie complète de l\'appli part sur ton Google Drive (dossier « '+GD_FOLDER+' ») à chaque nouvelle version. Colle le même lien de script Google que dans Coffre ou Poker.</small></div>'+
+    '<div style="display:flex;gap:8px"><input id="gsUrl" placeholder="Colle ici le lien du script Google" style="flex:1;min-width:0;font:inherit;font-size:.85rem;background:#0c0c0e;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px"><button type="button" id="gsTest" class="gdn" style="align-self:auto">Tester</button></div>'+
+    '<small id="gsInfo" style="color:var(--muted);font-size:.85rem"></small>';
+    const inp=document.getElementById("gsUrl"),info=document.getElementById("gsInfo");
+    const url=()=>(gdGet("metrodo_drive_url")||"").trim();
+    const show=(m,ok)=>{info.style.color=m?(ok?"var(--ok)":"var(--warn)"):"";if(m){info.textContent=m;return}
+      const t=parseInt(gdGet("metrodo_drive_last")||"0",10);
+      info.textContent=!url()?"Pas encore activée : colle le lien puis touche Tester.":"✓ Activée. "+(t?"Dernier envoi : "+new Date(t).toLocaleString("fr-FR",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})+".":"Premier envoi dans quelques secondes.")};
+    inp.value=url();
+    const save=()=>{const v=inp.value.trim();gdSet("metrodo_drive_url",v||null);show()};
+    let busy=false;
+    async function up(manual){const u=url();if(!u){if(manual)show("Colle d'abord le lien du script Google.",false);return}
+      if(busy)return;busy=true;if(manual)show("Envoi en cours…",true);
+      try{const sig=await gdSig();if(!manual&&sig===gdGet("metrodo_drive_sig"))return;
+        const body=JSON.stringify({nom:"metro-dodo-sauvegarde-"+gdTag()+".html",contenu:SNAP,dossier:GD_FOLDER,garder:GD_KEEP});
+        const r=await fetch(u,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body});const txt=(await r.text()).trim();
+        if(txt!=="ok")throw new Error(txt.slice(0,60));
+        gdSet("metrodo_drive_sig",sig);gdSet("metrodo_drive_last",String(Date.now()));show(manual?"✓ Sauvegarde envoyée sur ton Google Drive.":"",true)}
+      catch(e){if(manual)show(navigator.onLine?"Échec de l'envoi : vérifie le lien du script.":"Pas de connexion : l'envoi se fera dès que tu auras internet.",false)}
+      finally{busy=false}}
+    inp.onchange=save;document.getElementById("gsTest").onclick=()=>{save();up(true)};
+    show();setTimeout(()=>up(false),4000);addEventListener("online",()=>up(false));
+  }
   const go=document.getElementById("go");
   go.onclick=()=>{location.href="https://claude.ai/artifact/KaNyaR7BegRkSe2LepiZz3"};
   go.insertAdjacentHTML("afterend",'<div class="gost">La nouvelle recherche s\'ouvre dans Claude ; l\'appli se met à jour toute seule ensuite.</div>');
