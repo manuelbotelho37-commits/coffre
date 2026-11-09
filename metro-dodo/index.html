@@ -186,8 +186,9 @@ const gh=(q,budget)=>"https://www.google.com/travel/search?q="+enc(q+(budget?" m
 const expedia=q=>"https://www.expedia.fr/Hotel-Search?destination="+enc(q)+"&sort=PRICE_LOW_TO_HIGH&lodging=HOTEL&adults=1"+(D.cin&&D.cout?"&startDate="+D.cin+"&endDate="+D.cout:"");
 const hotelscom=q=>"https://fr.hotels.com/Hotel-Search?destination="+enc(q)+"&sort=PRICE_LOW_TO_HIGH&lodging=HOTEL&adults=1"+(D.cin&&D.cout?"&startDate="+D.cin+"&endDate="+D.cout:"");
 const dd=()=>{const a=D.cin||"2026-11-20",b=D.cout||"2026-11-23";return "chkin="+a+"&chkout="+b+"&rm1=a1"};
-const hcPage=id=>"https://fr.hotels.com/"+id+"/?"+dd();
-const exPage=id=>"https://www.expedia.fr/Hotel.h"+id.replace(/^h/,"")+".Hotel-Information?"+dd();
+const sel=r=>"&rooms=1"+(r.ids.ex?"&selected="+r.ids.ex.replace(/^h/,""):"");
+const hcPage=r=>hotelscom(r.name+" "+(r.area||"Paris"))+sel(r);
+const exPage=r=>expedia(r.name+" "+(r.area||"Paris"))+sel(r);
 const kayak=()=>"https://www.kayak.fr/hotels/Paris-c36014"+(D.cin&&D.cout?"/"+D.cin+"/"+D.cout+"/1adults":"")+"?sort=price_a";
 const trivago=q=>"https://www.trivago.fr/fr/srl?search="+enc(q);
 const booking=(q,filter)=>"https://www.booking.com/searchresults.fr.html?ss="+enc(q)+"&selected_currency=EUR"+dq()+"&nflt="+enc((filter?"price=EUR-min-"+D.pmax+"-1;":"")+"ht_id=204;roomfacility=38")+(filter?"&order=price":"");
@@ -221,7 +222,7 @@ function render(){showNights();
       ${r.warn?(r.warn.startsWith("Distance estimée")?`<li class="est">${r.warn}</li>`:`<li class="warn">⚠ ${r.warn}</li>`):""}
     </ul>
     <details class="metro"><summary>🚇 Itinéraire métro jusqu'à Franklin D. Roosevelt</summary>${route(r)}</details>
-    <div class="links"><a class="main" href="${hcPage(r.ids.hc)}" target="_blank" rel="noopener">Ouvrir sur Hotels.com</a><a href="${exPage(r.ids.ex)}" target="_blank" rel="noopener">Ouvrir sur Expedia</a><a href="${booking(r.name+" "+r.area)}" target="_blank" rel="noopener">Booking</a><a href="https://www.google.com/maps/search/?api=1&query=${enc(r.name+", "+(r.ids.adr||r.area))}" target="_blank" rel="noopener">Plan et avis</a></div>
+    <div class="links"><a class="main" href="${hcPage(r)}" target="_blank" rel="noopener">Ouvrir sur Hotels.com</a><a href="${exPage(r)}" target="_blank" rel="noopener">Ouvrir sur Expedia</a><a href="${booking(r.name+" "+r.area)}" target="_blank" rel="noopener">Booking</a><a href="https://www.google.com/maps/search/?api=1&query=${enc(r.name+", "+(r.ids.adr||r.area))}" target="_blank" rel="noopener">Plan et avis</a></div>
   </li>`;
   document.getElementById("synth").innerHTML=`
     <b class="rt">${rows.length} hôtels à moins de ${D.pmax} € sur la ligne ${CUR}</b>
