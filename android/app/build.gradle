@@ -58,6 +58,12 @@ android {
             resValue "string", "app_name", "Poker Win"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/poker/"'
         }
+        courses {
+            dimension "appli"
+            applicationId "fr.manu.courses"
+            resValue "string", "app_name", "Courses"
+            buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/courses/"'
+        }
     }
 
     buildFeatures {
