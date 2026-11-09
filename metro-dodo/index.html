@@ -301,7 +301,7 @@ render();
     async function up(manual){const u=url();if(!u){if(manual)show("Colle d'abord le lien du script Google.",false);return}
       if(busy)return;busy=true;if(manual)show("Envoi en cours…",true);
       try{const sig=await gdSig();if(!manual&&sig===gdGet("metrodo_drive_sig"))return;
-        const body=JSON.stringify({nom:"metro-dodo-sauvegarde-"+gdTag()+".html",contenu:SNAP,dossier:GD_FOLDER,garder:GD_KEEP});
+        const body=JSON.stringify({nom:"metro-dodo-sauvegarde-"+gdTag()+".html",contenu:SNAP,dossier:GD_FOLDER,garder:200});
         const r=await fetch(u,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body});const txt=(await r.text()).trim();
         if(txt!=="ok")throw new Error(txt.slice(0,60));
         gdSet("metrodo_drive_sig",sig);gdSet("metrodo_drive_last",String(Date.now()));show(manual?"✓ Sauvegarde envoyée sur ton Google Drive.":"",true)}
