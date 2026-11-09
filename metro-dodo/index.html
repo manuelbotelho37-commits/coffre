@@ -121,6 +121,7 @@ h1{background:var(--gold);-webkit-background-clip:text;background-clip:text;colo
 .rt{color:var(--accent)}
 .brand{display:flex;gap:14px;align-items:center}.logo{width:96px;height:96px;border-radius:22px;flex:none;box-shadow:0 6px 24px rgba(0,0,0,.5)}.brand h1{font-size:2.4rem;margin:0}.brand .sub{margin:2px 0 0;font-size:.95rem}
 .gd{display:flex;flex-direction:column;gap:8px}.gdb{font:inherit;text-align:left;background:var(--soft);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;font-weight:600}.gdb small{display:block;font-weight:400;color:var(--muted);font-size:.82rem;margin-top:3px}.gdn{font:inherit;align-self:flex-start;background:transparent;color:var(--accent);border:1px solid #4a4130;border-radius:999px;padding:7px 14px;cursor:pointer}
+.tabs{display:flex;gap:8px;margin:18px 0 0}.tabs button{flex:1;font:inherit;font-weight:700;font-size:1.05rem;padding:12px;border-radius:12px;border:1px solid #4a4130;background:var(--soft);color:var(--accent);cursor:pointer}.tabs button[aria-selected=true]{background:var(--gold);color:#111113;border-color:transparent}
 </style>
 </head>
 <body>
@@ -142,6 +143,7 @@ h1{background:var(--gold);-webkit-background-clip:text;background-clip:text;colo
   </div>
 
 
+<div class="tabs" role="tablist" aria-label="Ligne de métro"><button type="button" role="tab" data-l="1">Ligne 1</button><button type="button" role="tab" data-l="9">Ligne 9</button></div>
 <section class="tip releve" id="synth" aria-label="Synthèse des hôtels"></section>
 
   <p class="note">À savoir : à 80 € la nuit, les hôtels avec salle de bain privée sont rares dans le centre (Concorde, Louvre, Châtelet). Les moins chers se trouvent vers l'est (Gare de Lyon, Porte de Vincennes, Vincennes) et vers La Défense. Les prix changent selon les dates : vérifiez toujours avec le bouton « Comparer tous les sites ». Kayak s'ouvre sur Paris avec vos dates : tapez le nom de l'hôtel dans sa recherche. Temps de métro estimés à environ 1 min 30 par station, sans l'attente sur le quai. Temps à pied calculés à partir de la distance indiquée par Booking, avec un détour moyen des rues.</p>
@@ -150,8 +152,8 @@ h1{background:var(--gold);-webkit-background-clip:text;background-clip:text;colo
 
 <script>
 const SNAP="<!doctype html>\n"+document.documentElement.outerHTML;
-const LINE=["La Défense","Esplanade de La Défense","Pont de Neuilly","Les Sablons","Porte Maillot","Argentine","Charles de Gaulle – Étoile","George V","Franklin D. Roosevelt","Champs-Élysées – Clemenceau","Concorde","Tuileries","Palais Royal – Musée du Louvre","Louvre – Rivoli","Châtelet","Hôtel de Ville","Saint-Paul","Bastille","Gare de Lyon","Reuilly – Diderot","Nation","Porte de Vincennes","Saint-Mandé","Bérault"];
-const REF=8, PER=1.5;
+let LINE=["La Défense","Esplanade de La Défense","Pont de Neuilly","Les Sablons","Porte Maillot","Argentine","Charles de Gaulle – Étoile","George V","Franklin D. Roosevelt","Champs-Élysées – Clemenceau","Concorde","Tuileries","Palais Royal – Musée du Louvre","Louvre – Rivoli","Châtelet","Hôtel de Ville","Saint-Paul","Bastille","Gare de Lyon","Reuilly – Diderot","Nation","Porte de Vincennes","Saint-Mandé","Bérault"];
+let REF=8, PER=1.5;
 // station, nom, distance en mètres (à vol d'oiseau), type, avertissement
 const H=[
 ["Argentine", "Hotel Fertel Etoile", 200, "Hôtel 3 étoiles · 8,8/10 (813 avis)", "", "Paris 17e", 110, 330, [["Hotels.com",110,330],["Expedia",110,330]], {hc:"ho282595",ex:"h63336",adr:"4 rue des Acacias, 75017 Paris"}],
@@ -162,6 +164,17 @@ const H=[
 ["Bastille", "Hôtel des Trois Gares", 600, "Hôtel 3 étoiles · 8,4/10 (611 avis)", "", "Paris 12e", 101, 303, [["Expedia",101,303],["Hotels.com",103,310]], {hc:"ho349329",ex:"h1753858",adr:"1 rue Jules César, 75012 Paris"}],
 ["Saint-Mandé", "hotelF1 Paris Porte de Montreuil", 965, "Hôtel très basique · 7,2/10 (756 avis)", "Certaines chambres ont la douche et les toilettes sur le palier : choisissez une chambre avec salle de bain privée.", "Bagnolet", 55, 165, [["Expedia",55,165]], {hc:"ho572568",ex:"h13481399",adr:"290-302 rue Étienne Marcel, 93170 Bagnolet"}]
 ];
+const H9=[
+["Marcel Sembat", "Timhotel Boulogne Rives de Seine", 700, "Hôtel 2 étoiles · 6,4/10 (587 avis)", "", "Boulogne-Billancourt", 62, 187, [["Hotels.com",62,187],["Expedia",62,187]], {hc:"ho290993",ex:"h1304729",adr:"251 boulevard Jean-Jaurès, 92100 Boulogne-Billancourt"}],
+["Marcel Sembat", "Hotel de Paris", 1100, "Hôtel 3 étoiles · 8,4/10 (388 avis)", "Distance estimée : Marcel Sembat (ligne 9) est à environ 15 min à pied ; le métro Boulogne Jean Jaurès (ligne 10) est à 2 min.", "Boulogne-Billancourt", 76, 228, [["Hotels.com",76,228],["Expedia",76,228]], {hc:"ho498594",ex:"h10172563",adr:"104 bis rue de Paris, 92100 Boulogne-Billancourt"}],
+["République", "Hotel Excelsior Republique", 400, "Hôtel 2 étoiles · 6,4/10 (581 avis)", "", "Paris 10e", 82, 247, [["Hotels.com",82,247],["Expedia",82,247]], {hc:"ho283034",ex:"h565108",adr:"4 rue de Lancry, 75010 Paris"}],
+["Voltaire", "Au Royal Mad Hotel", 500, "Hôtel 2 étoiles · 6,6/10 (787 avis)", "Vérifiez que la chambre choisie a bien sa propre douche et ses toilettes.", "Paris 11e", 83, 248, [["Hotels.com",83,248]], {hc:"ho414053",ex:"h5265518",adr:"68 rue Sedaine, 75011 Paris"}],
+["Strasbourg – Saint-Denis", "Hôtel Du Brabant", 750, "Hôtel 2 étoiles · 5,8/10 (784 avis)", "", "Paris 10e", 89, 267, [["Expedia",89,267],["Hotels.com",92,275]], {hc:"ho287326",ex:"h2520450",adr:"18 rue des Petits-Hôtels, 75010 Paris"}]
+];
+const L9=["Pont de Sèvres","Billancourt","Marcel Sembat","Porte de Saint-Cloud","Exelmans","Michel-Ange – Molitor","Michel-Ange – Auteuil","Jasmin","Ranelagh","La Muette","Rue de la Pompe","Trocadéro","Iéna","Alma – Marceau","Franklin D. Roosevelt","Saint-Philippe du Roule","Miromesnil","Saint-Augustin","Havre – Caumartin","Chaussée d'Antin – La Fayette","Richelieu – Drouot","Grands Boulevards","Bonne Nouvelle","Strasbourg – Saint-Denis","République","Oberkampf","Saint-Ambroise","Voltaire","Charonne","Rue des Boulets"];
+const LN={"1":{st:LINE,ref:8,per:1.5,dw:"Château de Vincennes",de:"La Défense",H:H},"9":{st:L9,ref:14,per:1.33,dw:"Mairie de Montreuil",de:"Pont de Sèvres",H:H9}};
+let CUR="1";try{const v=localStorage.getItem("md_ligne");if(LN[v])CUR=v}catch(e){}
+LINE=LN[CUR].st;REF=LN[CUR].ref;PER=LN[CUR].per;
 const enc=encodeURIComponent;
 const walkMin=m=>Math.max(1,Math.round(m*1.3/80));
 const fmtDist=m=>m<1000?Math.round(m/10)*10+" m":(m/1000).toFixed(1).replace(".",",")+" km";
@@ -182,19 +195,19 @@ function showNights(){const el=document.getElementById("nights");if(!(D.cin&&D.c
   const n=Math.round((Date.parse(D.cout)-Date.parse(D.cin))/864e5);
   el.textContent=n>0?n+" nuit"+(n>1?"s":"")+" · budget max "+(n*D.pmax)+" € au total":"";}
 const RELEVE={dates:"du ven. 20 au lun. 23 novembre 2026",nuits:3,le:"8 nov. 2026",au_dessus:""};
-const XY={"La Défense":[48.8919,2.2380],"Esplanade de La Défense":[48.8884,2.2500],"Pont de Neuilly":[48.8855,2.2585],"Les Sablons":[48.8813,2.2719],"Porte Maillot":[48.8780,2.2826],"Argentine":[48.8757,2.2894],"Charles de Gaulle – Étoile":[48.8738,2.2950],"George V":[48.8720,2.3008],"Franklin D. Roosevelt":[48.8690,2.3097],"Champs-Élysées – Clemenceau":[48.8676,2.3141],"Concorde":[48.8656,2.3212],"Tuileries":[48.8645,2.3297],"Palais Royal – Musée du Louvre":[48.8625,2.3363],"Louvre – Rivoli":[48.8608,2.3410],"Châtelet":[48.8585,2.3470],"Hôtel de Ville":[48.8574,2.3520],"Saint-Paul":[48.8551,2.3608],"Bastille":[48.8531,2.3691],"Gare de Lyon":[48.8448,2.3735],"Reuilly – Diderot":[48.8472,2.3866],"Nation":[48.8483,2.3958],"Porte de Vincennes":[48.8470,2.4108],"Saint-Mandé":[48.8463,2.4189],"Bérault":[48.8454,2.4283]};
+const XY={"Pont de Sèvres":[48.8296,2.2306],"Billancourt":[48.8320,2.2380],"Marcel Sembat":[48.8337,2.2434],"Porte de Saint-Cloud":[48.8379,2.2567],"Exelmans":[48.8425,2.2600],"Michel-Ange – Molitor":[48.8448,2.2618],"Michel-Ange – Auteuil":[48.8479,2.2641],"Jasmin":[48.8524,2.2680],"Ranelagh":[48.8556,2.2698],"La Muette":[48.8581,2.2741],"Rue de la Pompe":[48.8641,2.2778],"Trocadéro":[48.8630,2.2875],"Iéna":[48.8648,2.2937],"Alma – Marceau":[48.8647,2.3010],"Saint-Philippe du Roule":[48.8723,2.3103],"Miromesnil":[48.8735,2.3161],"Saint-Augustin":[48.8746,2.3209],"Havre – Caumartin":[48.8737,2.3277],"Chaussée d'Antin – La Fayette":[48.8730,2.3333],"Richelieu – Drouot":[48.8721,2.3389],"Grands Boulevards":[48.8716,2.3431],"Bonne Nouvelle":[48.8706,2.3486],"Strasbourg – Saint-Denis":[48.8696,2.3543],"République":[48.8674,2.3637],"Oberkampf":[48.8648,2.3681],"Saint-Ambroise":[48.8612,2.3740],"Voltaire":[48.8576,2.3801],"Charonne":[48.8550,2.3849],"Rue des Boulets":[48.8522,2.3891],"La Défense":[48.8919,2.2380],"Esplanade de La Défense":[48.8884,2.2500],"Pont de Neuilly":[48.8855,2.2585],"Les Sablons":[48.8813,2.2719],"Porte Maillot":[48.8780,2.2826],"Argentine":[48.8757,2.2894],"Charles de Gaulle – Étoile":[48.8738,2.2950],"George V":[48.8720,2.3008],"Franklin D. Roosevelt":[48.8690,2.3097],"Champs-Élysées – Clemenceau":[48.8676,2.3141],"Concorde":[48.8656,2.3212],"Tuileries":[48.8645,2.3297],"Palais Royal – Musée du Louvre":[48.8625,2.3363],"Louvre – Rivoli":[48.8608,2.3410],"Châtelet":[48.8585,2.3470],"Hôtel de Ville":[48.8574,2.3520],"Saint-Paul":[48.8551,2.3608],"Bastille":[48.8531,2.3691],"Gare de Lyon":[48.8448,2.3735],"Reuilly – Diderot":[48.8472,2.3866],"Nation":[48.8483,2.3958],"Porte de Vincennes":[48.8470,2.4108],"Saint-Mandé":[48.8463,2.4189],"Bérault":[48.8454,2.4283]};
 function car(st,dist){const a=XY[st],b=XY["Franklin D. Roosevelt"];if(!a)return null;const R=6371,dl=(a[0]-b[0])*Math.PI/180,dg=(a[1]-b[1])*Math.PI/180,x=Math.sin(dl/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dg/2)**2;
   const km=2*R*Math.asin(Math.sqrt(x))*1.35+(dist||0)/1000;const t=v=>Math.max(3,Math.round(km/v*60+2));return{km:Math.max(1,Math.round(km*10)/10),slots:[["12 h – 18 h",t(16)],["18 h – 20 h",t(11)],["20 h – minuit",t(22)],["minuit – 6 h",t(32)]]}}
-function route(r){const i=LINE.indexOf(r.st),west=i<REF,dir=west?"Château de Vincennes":"La Défense";
+function route(r){const i=LINE.indexOf(r.st),west=i<REF,dir=west?LN[CUR].dw:LN[CUR].de;
   const stops=[];for(let k=i;west?k<=REF:k>=REF;k+=west?1:-1)stops.push(LINE[k]);
   return `<ol class="steps2">
     <li><b>À pied</b> de l'hôtel jusqu'au métro <b>${r.st}</b> : ≈ ${r.w} min (${fmtDist(r.dist)})</li>
-    <li>Prenez la <span class="l1">1</span> <b>direction ${dir}</b></li>
+    <li>Prenez la <span class="l1">${CUR}</span> <b>direction ${dir}</b></li>
     <li><b>${r.n} stations</b>, ≈ ${r.m} min :<div class="stops">${stops.map((s,j)=>`<span class="${j===0?"dep":j===stops.length-1?"arr":""}">${s}</span>`).join("")}</div></li>
     <li>Descendez à <b>Franklin D. Roosevelt</b> · total ≈ ${r.tot} min depuis l'hôtel</li>
   </ol>`}
 function render(){showNights();
-  const rows=H.filter(h=>h[6]==null||h[6]<=D.pmax).map(h=>{const i=LINE.indexOf(h[0]),n=Math.abs(i-REF),m=Math.round(n*PER),w=walkMin(h[2]);return{st:h[0],name:h[1],dist:h[2],type:h[3],warn:h[4],area:h[5],price:h[6],total:h[7],sites:h[8]||[],ids:h[9]||{},n,m,w,tot:w+m,side:i<REF?"ouest":"est"}}).sort((a,b)=>a.tot-b.tot);
+  const rows=LN[CUR].H.filter(h=>h[6]==null||h[6]<=D.pmax).map(h=>{const i=LINE.indexOf(h[0]),n=Math.abs(i-REF),m=Math.round(n*PER),w=walkMin(h[2]);return{st:h[0],name:h[1],dist:h[2],type:h[3],warn:h[4],area:h[5],price:h[6],total:h[7],sites:h[8]||[],ids:h[9]||{},n,m,w,tot:w+m,side:i<REF?"ouest":"est"}}).sort((a,b)=>a.tot-b.tot);
   const inB=rows.filter(r=>r.price!=null&&r.price<=D.pmax).length,noP=rows.filter(r=>r.price==null).length;
   const stations=new Set(rows.map(r=>r.st)).size;
   const card=(r,k)=>`<li>
@@ -211,7 +224,7 @@ function render(){showNights();
     <div class="links"><a class="main" href="${hcPage(r.ids.hc)}" target="_blank" rel="noopener">Ouvrir sur Hotels.com</a><a href="${exPage(r.ids.ex)}" target="_blank" rel="noopener">Ouvrir sur Expedia</a><a href="${booking(r.name+" "+r.area)}" target="_blank" rel="noopener">Booking</a><a href="https://www.google.com/maps/search/?api=1&query=${enc(r.name+", "+(r.ids.adr||r.area))}" target="_blank" rel="noopener">Plan et avis</a></div>
   </li>`;
   document.getElementById("synth").innerHTML=`
-    <b class="rt">${rows.length} hôtels à moins de ${D.pmax} € sur la ligne 1</b>
+    <b class="rt">${rows.length} hôtels à moins de ${D.pmax} € sur la ligne ${CUR}</b>
     <span class="rs">Sur les stations à 15 stations maximum de Franklin D. Roosevelt · classés du plus proche au plus loin · 1 personne · ${RELEVE.dates}</span>
     <div class="chips"><span class="ck ok">${inB} sous ${D.pmax} € la nuit</span><span class="ck">prix comparés : Hotels.com et Expedia</span></div>
     <ol class="best">${rows.map(card).join("")}</ol>
@@ -223,7 +236,7 @@ const pm=document.getElementById("pmax");cin.value=D.cin;cout.value=D.cout;pm.va
 pm.onchange=()=>{const v=parseInt(pm.value,10);D.pmax=v>0?v:80;pm.value=D.pmax;try{localStorage.setItem("fdr_dates",JSON.stringify(D))}catch(e){}render()};
 function setDates(){D.cin=cin.value;D.cout=cout.value;if(D.cin&&(!D.cout||D.cout<=D.cin)){const t=new Date(D.cin);t.setDate(t.getDate()+1);D.cout=t.toISOString().slice(0,10);cout.value=D.cout}try{localStorage.setItem("fdr_dates",JSON.stringify(D))}catch(e){}render()}
 cin.onchange=setDates;cout.onchange=setDates;
-const TRIG="trig_01JAN6RadQmWSp6fFg496sc3",go=document.getElementById("go"),gost=document.getElementById("gost");
+const TRIG="trig_013Qpnr7yJsG832pktWfY7CF",go=document.getElementById("go"),gost=document.getElementById("gost");
 const say=(t,c)=>{gost.textContent=t;gost.className="gost"+(c?" "+c:"")};
 go.onclick=async()=>{
   if(!D.cin||!D.cout){say("Choisissez d'abord vos dates d'arrivée et de départ.","bad");return}
@@ -279,6 +292,7 @@ async function gdUpload(manual){if(gdBusy||(!manual&&!gdOn()))return;gdBusy=true
 document.getElementById("gdBtn").onclick=async()=>{if(gdOn()){gdSet("md_gd_on",null);gdInfo()}else{gdSet("md_gd_on","1");gdSet("md_gd_sig",null);gdInfo();await gdUpload(true)}};
 document.getElementById("gdNow").onclick=()=>gdUpload(true);
 gdInfo();setTimeout(()=>{if(gdOn())gdUpload(false)},4000);
+document.querySelectorAll(".tabs button").forEach(b=>{b.setAttribute("aria-selected",b.dataset.l===CUR?"true":"false");b.onclick=()=>{CUR=b.dataset.l;LINE=LN[CUR].st;REF=LN[CUR].ref;PER=LN[CUR].per;try{localStorage.setItem("md_ligne",CUR)}catch(e){}document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b?"true":"false"));render()}});
 render();
 </script>
 
