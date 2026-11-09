@@ -234,7 +234,7 @@ go.onclick=async()=>{
   try{await db.doc("demandes/derniere").set({cin:D.cin,cout:D.cout,pmax:D.pmax,nuits:n,statut:"demandee",le:new Date().toISOString()})}
   catch(e){say("Impossible d'enregistrer la demande ("+((e&&e.code)||"erreur")+"). Écrivez-la à Claude dans le chat.","bad");go.disabled=false;return}
   try{await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:TRIG});
-    say("✓ Recherche lancée pour "+n+" nuit"+(n>1?"s":"")+" à "+D.pmax+" € max. Claude relève les prix et met l'appli à jour d'ici 10 à 15 minutes : rouvrez-la ensuite.","ok")}
+    say("✓ Recherche lancée pour "+n+" nuit"+(n>1?"s":"")+" à "+D.pmax+" € max. Claude relève les prix et met l'appli à jour d'ici 5 minutes environ : rouvrez-la ensuite.","ok")}
   catch(e){const c=e&&e.code;console.log("fire",c,e&&e.message);
     if(c==="server_not_connected"||c==="needs_reauth")say("Connecteur « Claude Code Remote » à (re)connecter dans Réglages → Connecteurs de claude.ai.","bad");
     else if(c==="not_in_manifest"||c==="approval_required"||c==="consent_required")say("Il faut autoriser l'appli à lancer la recherche : réappuyez et choisissez « Autoriser ».","bad");
