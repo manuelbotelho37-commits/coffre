@@ -95,8 +95,13 @@
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
   .toast button{border:0; background:none; color:var(--brass2); font:inherit; font-weight:600; cursor:pointer; padding:4px 6px;}
 
-  .confirm{display:flex; gap:8px; align-items:center;}
-  .confirm .yes{color:var(--red);}
+  .ask{flex:none; display:flex; gap:6px; align-items:center;}
+  .ask button{font:inherit; font-size:.88rem; border-radius:10px; height:38px; padding:0 12px; cursor:pointer; border:1px solid var(--line); background:var(--surface2); color:var(--dim);}
+  .ask .yes{background:var(--brass); border-color:var(--brass); color:#1a1508; font-weight:600;}
+  .ask .yes.back{background:var(--surface2); border-color:var(--brass); color:var(--brass2);}
+  .item.asking{background:var(--surface2); box-shadow:inset 3px 0 0 var(--brass);}
+  .item.asking .emo{background:var(--surface);}
+  @media (max-width:380px){ .ask button{padding:0 9px; font-size:.82rem;} }
 
   [hidden]{display:none!important;}
   .emo{border:0; color:inherit; cursor:pointer; padding:0;}
@@ -338,7 +343,10 @@ function addItem(raw){
   h.n++; h.name=p.name; if(!h.custom) h.emo=it.emo; h.cat=it.cat; h.t=Date.now(); state.hist[key]=h;
   store.save(); render();
 }
-function toggle(id){ const it=state.items.find(i=>i.id===id); if(!it) return; it.done=!it.done; store.save(); render(); }
+/* Toucher un produit demande d'abord confirmation */
+let askId=null, askT=null;
+function ask(id){ askId = askId===id ? null : id; clearTimeout(askT); if(askId) askT=setTimeout(()=>{ askId=null; render(); },6000); render(); }
+function toggle(id){ askId=null; clearTimeout(askT); const it=state.items.find(i=>i.id===id); if(!it) return; it.done=!it.done; store.save(); render(); }
 function setQty(id,d){ const it=state.items.find(i=>i.id===id); if(!it) return; it.qty=Math.max(1,Math.min(99,it.qty+d)); store.save(); render(); }
 let undo=null, toastT=null;
 function removeItem(id){
@@ -362,14 +370,18 @@ $('toastBtn').addEventListener('click',()=>{ if(undo){ undo(); undo=null; store.
 const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="#14181d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
 function row(it){
-  return `<div class="item${it.done?' done':''}" data-id="${it.id}">
+  const asking = askId===it.id;
+  return `<div class="item${it.done?' done':''}${asking?' asking':''}" data-id="${it.id}">
     <button class="check" data-act="toggle" aria-label="${it.done?'Remettre':'Cocher'} ${esc(it.name)}">${CHECK}</button>
     <button class="emo" data-act="emo" aria-label="Changer l’emoji">${it.emo}</button>
     <div class="name" data-act="toggle" tabindex="-1">${esc(it.name)}</div>
-    <div class="qty${it.qty<=1?' one':''}">
+    ${asking ? `<div class="ask">
+      <button type="button" data-act="no">Non</button>
+      <button type="button" class="yes${it.done?' back':''}" data-act="yes">${it.done?'Remettre':'Au panier'}</button>
+    </div>` : `<div class="qty${it.qty<=1?' one':''}">
       <button class="minus" data-act="minus" aria-label="Moins">−</button><span class="v">×${it.qty}</span><button data-act="plus" aria-label="Plus">+</button>
     </div>
-    <button class="del" data-act="del" aria-label="Supprimer ${esc(it.name)}">✕</button>
+    <button class="del" data-act="del" aria-label="Supprimer ${esc(it.name)}">✕</button>`}
   </div>`;
 }
 function render(){
@@ -403,6 +415,7 @@ function render(){
 function renderChips(){
   const inList=new Set(state.items.filter(i=>!i.done).map(i=>norm(i.name)));
   const q=norm(input.value);
+  if(!q){ chips.innerHTML=''; chips.hidden=true; return; }
   let list=Object.entries(state.hist).filter(([k])=>!inList.has(k));
   if(q) list=list.filter(([k])=>k.includes(q) && k!==q);
   list.sort((a,b)=>(b[1].n-a[1].n)||(b[1].t-a[1].t));
@@ -413,10 +426,12 @@ function renderChips(){
 
 /* ---------- Événements ---------- */
 main.addEventListener('click',e=>{
-  const b=e.target.closest('[data-act]'); if(!b) return;
+  const b=e.target.closest('[data-act]');
+  if(askId && (!b || !b.closest('.item') || b.closest('.item').dataset.id!==askId) && !(b && b.dataset.act==='toggle')){ askId=null; render(); if(!b) return; }
+  if(!b) return;
   if(b.dataset.act==='clear'){ clearBasket(); return; }
   const row=b.closest('.item'); if(!row) return; const id=row.dataset.id;
-  ({emo:()=>openPicker(id), toggle:()=>toggle(id), plus:()=>setQty(id,1), minus:()=>setQty(id,-1), del:()=>removeItem(id)})[b.dataset.act]?.();
+  ({emo:()=>openPicker(id), toggle:()=>ask(id), yes:()=>toggle(id), no:()=>{askId=null; render();}, plus:()=>setQty(id,1), minus:()=>setQty(id,-1), del:()=>removeItem(id)})[b.dataset.act]?.();
 });
 chips.addEventListener('click',e=>{
   const c=e.target.closest('.chip'); if(!c) return; const h=state.hist[c.dataset.key]; if(h){ addItem(h.name); input.value=''; updatePreview(); }
@@ -433,6 +448,8 @@ function updatePreview(){
 input.addEventListener('input',updatePreview);
 $('vRayon').addEventListener('click',()=>{ state.view='rayon'; store.save(); render(); });
 $('vListe').addEventListener('click',()=>{ state.view='liste'; store.save(); render(); });
+
+document.addEventListener('click',e=>{ if(askId && !e.target.closest('#main')){ askId=null; render(); } }, true);
 
 /* Choisir l'emoji soi-même */
 const EXTRA_EMO='🍎🍏🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🫒🥦🥬🥒🌶️🫑🌽🥕🧄🧅🥔🍠🫚🫛🫘🥜🌰🍄🌿🌱🍞🥐🥖🫓🥨🥯🥞🧇🧀🍖🍗🥩🥓🍔🍟🍕🌭🥪🌮🌯🥙🧆🥚🍳🥘🍲🥣🥗🍿🧈🧂🥫🍱🍘🍙🍚🍛🍜🍝🍣🍤🍥🥟🦪🦀🦞🦐🦑🐟🍦🍧🍨🍩🍪🎂🍰🧁🥧🍫🍬🍭🍮🍯🍼🥛☕🫖🍵🧃🥤🧋🍶🍺🍻🥂🍷🥃🍸🍹🍾🧊💧🧴🧼🪥🧻🧽🧹🧺🗑️💊🩹💄🪒🔋💡🕯️🐾🐱🐶👶🛒🛍️🎁💐';
