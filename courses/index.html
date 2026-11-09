@@ -98,6 +98,16 @@
   .confirm{display:flex; gap:8px; align-items:center;}
   .confirm .yes{color:var(--red);}
 
+  [hidden]{display:none!important;}
+  .emo{border:0; color:inherit; cursor:pointer; padding:0;}
+  .sheet-bg{position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center;}
+  .sheet{width:100%; max-width:640px; max-height:70vh; display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--line); border-bottom:0; border-radius:18px 18px 0 0;
+    padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}
+  .sheet h3{font-family:var(--serif); font-weight:600; margin:0 0 4px; font-size:1.2rem;}
+  .sheet p{margin:0 0 12px; color:var(--dim); font-size:.88rem;}
+  .grid{overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(48px,1fr)); gap:6px;}
+  .grid button{border:1px solid transparent; background:var(--surface2); border-radius:10px; height:48px; font-size:1.5rem; cursor:pointer; padding:0;}
+  .grid button.on{border-color:var(--brass);}
   button:focus-visible,.name:focus-visible{outline:2px solid var(--brass); outline-offset:2px;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
@@ -125,6 +135,14 @@
       <input id="newItem" type="text" placeholder="Ajouter… (ex : 3 pommes)" enterkeyhint="done" aria-label="Produit à ajouter">
       <button class="addbtn" id="addBtn" type="submit" disabled>Ajouter</button>
     </form>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">Choisir l’emoji</h3>
+    <p id="sheetSub">Il sera gardé pour la prochaine fois.</p>
+    <div class="grid" id="emoGrid"></div>
   </div>
 </div>
 
@@ -178,7 +196,55 @@ coton|☁️|h;mouchoir|🤧|h;papier toilette|🧻|h;pq|🧻|h;serviette hygien
 lessive|🧺|m;adoucissant|🧺|m;liquide vaisselle|🧽|m;pastille lave vaisselle|🧽|m;eponge|🧽|m;javel|🧴|m;nettoyant|🧴|m;sac poubelle|🗑️|m;poubelle|🗑️|m;essuie tout|🧻|m;sopalin|🧻|m;
 papier alu|📜|m;aluminium|📜|m;film|📜|m;pile|🔋|m;ampoule|💡|m;bougie|🕯️|m;allumette|🔥|m;
 couche|👶|a;lingette|👶|a;petit pot|🍼|a;lait bebe|🍼|a;croquette|🐾|a;patee|🐾|a;litiere|🐱|a;chat|🐱|a;chien|🐶|a;
-fleur|💐|z;journal|📰|z;cadeau|🎁|z
+fleur|💐|z;journal|📰|z;cadeau|🎁|z;
+yoghourt|🥛|c;yogurt|🥛|c;yaourt grec|🥛|c;danette|🍮|c;activia|🥛|c;actimel|🥛|c;kefir|🥛|c;lait de coco|🥥|e;lait d avoine|🥛|d;lait de soja|🥛|d;lait demi ecreme|🥛|c;lait entier|🥛|c;lait concentre|🥛|e;
+creme liquide|🥛|c;creme epaisse|🥛|c;chantilly|🍦|c;mascarpone|🧀|c;ricotta|🧀|c;burrata|🧀|c;cheddar|🧀|c;gouda|🧀|c;edam|🧀|c;roquefort|🧀|c;bleu|🧀|c;reblochon|🧀|c;tomme|🧀|c;cantal|🧀|c;
+munster|🧀|c;mimolette|🧀|c;saint nectaire|🧀|c;coulommiers|🧀|c;babybel|🧀|c;kiri|🧀|c;vache qui rit|🧀|c;boursin|🧀|c;st moret|🧀|c;fromage rape|🧀|c;halloumi|🧀|c;pecorino|🧀|c;gorgonzola|🧀|c;
+oeufs|🥚|c;oeuf frais|🥚|c;pate brisee|🥧|c;pate feuilletee|🥧|c;pate sablee|🥧|c;pate a pizza|🍕|c;quiche|🥧|c;tarte|🥧|s;
+abricot sec|🍑|e;figue|🍑|f;datte|🌴|e;grenade|🍎|f;litchi|🍒|f;fruit de la passion|🥭|f;papaye|🥭|f;goyave|🥭|f;kaki|🍅|f;pamplemousse|🍊|f;coing|🍐|f;mure|🫐|f;groseille|🍒|f;cassis|🫐|f;
+rhubarbe|🥬|f;canneberge|🍒|f;cranberry|🍒|f;raisin sec|🍇|e;pruneau|🍑|e;fruit sec|🥜|e;fruits rouges|🍓|f;clementines|🍊|f;citron jaune|🍋|f;lime|🍋|f;plantain|🍌|f;
+potimarron|🎃|f;panais|🥕|f;topinambour|🥔|f;endive|🥬|f;chicoree|🥬|f;cresson|🥬|f;blette|🥬|f;chou rouge|🥬|f;chou de bruxelles|🥬|f;chou kale|🥬|f;kale|🥬|f;pak choi|🥬|f;
+salade verte|🥬|f;batavia|🥬|f;iceberg|🥬|f;feve|🫛|f;edamame|🫛|f;pousse de soja|🌱|f;germe|🌱|f;gousse d ail|🧄|f;oignon rouge|🧅|f;oignon nouveau|🧅|f;cebette|🧅|f;
+pomme de terre nouvelle|🥔|f;grenaille|🥔|f;cerfeuil|🌿|f;estragon|🌿|f;aneth|🌿|f;romarin|🌿|f;laurier|🌿|f;sauge|🌿|f;origan|🌿|e;herbes de provence|🌿|e;curcuma|🧂|e;
+cumin|🧂|e;paprika|🧂|e;curry|🍛|e;cannelle|🧂|e;muscade|🧂|e;vanille|🌼|e;safran|🧂|e;piment d espelette|🌶️|e;gros sel|🧂|e;fleur de sel|🧂|e;bicarbonate|🧂|m;
+pain complet|🍞|b;pain aux cereales|🍞|b;pain de campagne|🍞|b;pain burger|🍔|b;pain hamburger|🍔|b;pain hot dog|🌭|b;pain pita|🫓|b;naan|🫓|b;biscotte|🍞|s;pain grille|🍞|s;
+pain d epice|🍞|s;cracotte|🍞|s;galette|🫓|b;galette de riz|🍘|e;blinis|🥞|c;pancake|🥞|s;muffin|🧁|s;donut|🍩|s;beignet|🍩|s;macaron|🍪|s;eclair|🍰|b;tarte au citron|🥧|b;
+mille feuille|🍰|b;flan patissier|🍮|b;chouquette|🥐|b;pain aux raisins|🥐|b;croissants|🥐|b;baguettes|🥖|b;ficelle|🥖|b;tradition|🥖|b;fougasse|🫓|b;
+filet de poulet|🍗|v;blanc de poulet|🍗|v;aiguillette|🍗|v;nugget|🍗|g;cordon bleu|🍗|v;pilon|🍗|v;aile de poulet|🍗|v;canard|🦆|v;magret|🦆|v;lapin|🐇|v;pintade|🍗|v;caille|🍗|v;
+entrecote|🥩|v;bavette|🥩|v;faux filet|🥩|v;rumsteck|🥩|v;filet mignon|🥩|v;cote de porc|🥩|v;cote de boeuf|🥩|v;echine|🥩|v;travers|🍖|v;ribs|🍖|v;gigot|🍖|v;souris d agneau|🍖|v;
+boeuf bourguignon|🥩|v;pot au feu|🥩|v;blanquette|🥩|v;osso bucco|🥩|v;viande hachee|🍔|v;boulette|🧆|v;burger|🍔|v;hamburger|🍔|v;kebab|🥙|v;gyros|🥙|v;cuisse de poulet|🍗|v;
+jambon blanc|🍖|v;jambon cru|🍖|v;jambon de parme|🍖|v;serrano|🍖|v;prosciutto|🍖|v;coppa|🥓|v;pancetta|🥓|v;salami|🥓|v;rosette|🥓|v;pate de campagne|🍖|v;rillette|🍖|v;
+foie gras|🍖|v;boudin|🌭|v;andouillette|🌭|v;chipolata|🌭|v;saucisse de strasbourg|🌭|v;saucisse de toulouse|🌭|v;hot dog|🌭|v;
+filet de saumon|🍣|v;saumon fume|🍣|v;truite|🐟|v;dorade|🐟|v;bar|🐟|v;loup|🐟|v;merlu|🐟|v;lieu|🐟|v;sole|🐟|v;maquereau|🐟|e;hareng|🐟|e;anchois|🐟|e;morue|🐟|v;
+lotte|🐟|v;espadon|🐟|v;tilapia|🐟|v;poisson pane|🐟|g;fish stick|🐟|g;calamar|🦑|v;encornet|🦑|v;seiche|🦑|v;poulpe|🐙|v;huitre|🦪|v;saint jacques|🐚|v;coquille|🐚|v;
+homard|🦞|v;langouste|🦞|v;langoustine|🦐|v;crabe|🦀|v;bulot|🐚|v;bigorneau|🐚|v;oursin|🐚|v;fruits de mer|🦐|v;tarama|🐟|c;sushi|🍣|v;maki|🍣|v;sashimi|🍣|v;
+tofu|🧈|c;tempeh|🧈|c;seitan|🧈|c;steak vegetal|🍔|c;falafel|🧆|c;houmous|🫘|c;guacamole|🥑|c;tzatziki|🥒|c;taboule|🥗|c;salade composee|🥗|c;carottes rapees|🥕|c;
+macaroni|🍝|e;fusilli|🍝|e;farfalle|🍝|e;linguine|🍝|e;ravioli|🥟|c;tortellini|🥟|c;gnocchi|🥔|c;raviole|🥟|c;spatzle|🍝|e;nouilles chinoises|🍜|e;ramen|🍜|e;udon|🍜|e;soba|🍜|e;vermicelle|🍜|e;
+riz basmati|🍚|e;riz thai|🍚|e;riz complet|🍚|e;risotto|🍚|e;riz rond|🍚|e;boulgour|🍚|e;couscous|🍚|e;polenta|🌽|e;sarrasin|🌾|e;avoine|🌾|e;flocon|🥣|s;maizena|🌾|e;fecule|🌾|e;
+chapelure|🍞|e;levure chimique|🌾|e;sucre glace|🧂|e;sucre roux|🧂|e;cassonade|🧂|e;sucre vanille|🧂|e;edulcorant|🧂|e;sirop d erable|🍁|s;caramel|🍮|s;
+huile de tournesol|🌻|e;huile de colza|🫒|e;huile de sesame|🫒|e;vinaigre balsamique|🍶|e;sauce soja|🥢|e;sauce pesto|🌿|e;pesto|🌿|e;sauce bolognaise|🥫|e;sauce barbecue|🥫|e;
+sauce piquante|🌶️|e;tabasco|🌶️|e;harissa|🌶️|e;sriracha|🌶️|e;sauce samourai|🥫|e;sauce blanche|🥫|e;vinaigrette|🥗|e;cornichons|🥒|e;capre|🫒|e;tapenade|🫒|e;
+coulis de tomate|🥫|e;tomate pelee|🥫|e;double concentre|🥫|e;mais en boite|🌽|e;haricot rouge|🫘|e;haricot blanc|🫘|e;petits pois carottes|🫛|e;ratatouille|🥫|e;cassoulet|🥫|e;
+raviolis en boite|🥫|e;choucroute|🥬|v;paella|🥘|v;lasagnes|🍝|g;hachis parmentier|🥔|g;gratin|🥔|c;puree|🥔|e;
+pop corn|🍿|e;popcorn|🍿|e;cacahuetes|🥜|e;noix de cajou|🥜|e;cajou|🥜|e;noix de pecan|🌰|e;noix du bresil|🌰|e;graine|🌱|e;graines de chia|🌱|e;sesame|🌱|e;olives|🫒|e;
+tortilla chips|🌮|e;nachos|🌮|e;bretzel|🥨|e;crackers|🍘|e;tuc|🍘|e;curly|🥨|e;taco|🌮|e;burrito|🌯|e;fajita|🌯|e;kit fajitas|🌯|e;
+pate a tartiner|🍫|s;beurre de cacahuete|🥜|s;speculoos|🍪|s;petit beurre|🍪|s;prince|🍪|s;oreo|🍪|s;granola|🥣|s;barre de cereales|🍫|s;barre chocolatee|🍫|s;
+chocolat noir|🍫|s;chocolat au lait|🍫|s;chocolat blanc|🍫|s;tablette|🍫|s;kinder|🍫|s;bonbons|🍬|s;chewing gum|🍬|s;guimauve|🍡|s;marshmallow|🍡|s;reglisse|🍬|s;
+cafe moulu|☕|s;cafe en grain|☕|s;capsule|☕|s;dosette|☕|s;nespresso|☕|s;cafe soluble|☕|s;the vert|🍵|s;the noir|🍵|s;infusion|🍵|s;chocolat en poudre|🍫|s;
+glace vanille|🍨|g;sorbet|🍧|g;esquimau|🍦|g;cone|🍦|g;magnum|🍦|g;buche glacee|🍨|g;legumes surgeles|🧊|g;epinards surgeles|🥬|g;pizza surgelee|🍕|g;poelee|🍳|g;
+eau minerale|💧|d;eau petillante|💧|d;perrier|💧|d;badoit|💧|d;evian|💧|d;cristaline|💧|d;jus de pomme|🧃|d;jus de raisin|🧃|d;jus multifruit|🧃|d;smoothie|🥤|d;
+coca cola|🥤|d;pepsi|🥤|d;fanta|🥤|d;sprite|🥤|d;orangina|🥤|d;ice tea|🥤|d;the glace|🥤|d;oasis|🧃|d;boisson energisante|🥤|d;red bull|🥤|d;
+biere blonde|🍺|d;biere brune|🍺|d;pack de biere|🍻|d;vin rose|🍷|d;prosecco|🥂|d;cremant|🍾|d;mousseux|🍾|d;vodka|🍸|d;gin|🍸|d;tequila|🥃|d;porto|🍷|d;martini|🍸|d;
+liqueur|🥃|d;cognac|🥃|d;armagnac|🥃|d;calvados|🥃|d;sake|🍶|d;sangria|🍷|d;
+brosse a dents|🪥|h;fil dentaire|🪥|h;bain de bouche|🪥|h;gel|🧴|h;mousse a raser|🪒|h;lame de rasoir|🪒|h;coton tige|☁️|h;demaquillant|🧴|h;creme hydratante|🧴|h;
+lait corporel|🧴|h;vernis|💅|h;protege slip|🩹|h;mouchoirs|🤧|h;paracetamol|💊|h;ibuprofene|💊|h;vitamine|💊|h;
+liquide vaisselle|🧽|m;tablette lave vaisselle|🧽|m;sel lave vaisselle|🧂|m;produit vaisselle|🧽|m;spray|🧴|m;desinfectant|🧴|m;vinaigre blanc|🍶|m;
+serpillere|🧹|m;balai|🧹|m;gant|🧤|m;sac congelation|🛍️|m;papier cuisson|📜|m;film alimentaire|📜|m;sac|🛍️|m;assiette|🍽️|m;gobelet|🥤|m;
+serviette|🧻|m;serviette en papier|🧻|m;essuie mains|🧻|m;desodorisant|🌸|m;insecticide|🦟|m;anti moustique|🦟|m;charbon|🔥|m;
+couches|👶|a;lait infantile|🍼|a;biberon|🍼|a;tetine|🍼|a;nourriture chat|🐱|a;nourriture chien|🐶|a;friandise|🦴|a;os|🦴|a;
+pizza|🍕|e;quiche lorraine|🥧|c;sandwich|🥪|c;croque monsieur|🥪|c;salade toute prete|🥗|c;plat prepare|🍱|c;soupe miso|🍲|e;gaspacho|🥣|d;veloute|🥣|e;nem|🥟|g;samoussa|🥟|g;
+dim sum|🥟|g;gyoza|🥟|g;raviolis chinois|🥟|g;riz cantonais|🍚|g;onigiri|🍙|c;bento|🍱|c;curry vert|🍛|e;lait de coco|🥥|e;wasabi|🌶️|e;gingembre marine|🫚|e;
+dattes|🌴|e;miel|🍯|s;yaourt nature|🥛|c;yaourt aux fruits|🥛|c;fromage frais|🧀|c;faisselle|🥛|c;compote a boire|🍎|s;gourde|🍎|s
 `;
 function norm(s){
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/œ/g,'oe').replace(/æ/g,'ae')
@@ -189,16 +255,41 @@ function toks(s){ return norm(s).split(' ').filter(Boolean).map(sing); }
 const DICT = DICT_SRC.split(';').map(x=>x.trim()).filter(Boolean).map(x=>{
   const [k,e,c] = x.split('|'); return {t:toks(k), e, c};
 });
+function lev(a,b,max){
+  if(Math.abs(a.length-b.length)>max) return max+1;
+  let prev=Array.from({length:b.length+1},(_,j)=>j);
+  for(let i=1;i<=a.length;i++){
+    const cur=[i]; let rowMin=i;
+    for(let j=1;j<=b.length;j++){
+      cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+      if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) cur[j]=Math.min(cur[j],prev[j-2]+1);
+      rowMin=Math.min(rowMin,cur[j]);
+    }
+    if(rowMin>max) return max+1; prev=cur;
+  }
+  return prev[b.length];
+}
+// 0 = identique, 1 = faute de frappe, 2 = début du mot (en train d'écrire), -1 = différent
+function close(w,k,last){
+  if(w===k) return 0;
+  if(k.length>=4 && w.length>=3){
+    const tol = k.length>=7 ? 2 : 1;
+    if(lev(w,k,tol)<=tol) return 1;
+  }
+  if(last && w.length>=3 && k.startsWith(w)) return 2;
+  return -1;
+}
 function guess(name){
   const t = toks(name); if(!t.length) return null;
   let best=null;
   for(const d of DICT){
     const L=d.t.length;
     for(let i=0;i+L<=t.length;i++){
-      let ok=true; for(let j=0;j<L;j++){ if(t[i+j]!==d.t[j]){ok=false;break;} }
+      let ok=true, pen=0;
+      for(let j=0;j<L;j++){ const r=close(t[i+j],d.t[j], i+j===t.length-1); if(r<0){ok=false;break;} pen+=r; }
       if(ok){
-        // le premier mot compte le plus (« yaourt à la fraise » = yaourt), puis le plus long
-        const score = -i*10 + L;
+        // le premier mot compte le plus (« yaourt à la fraise » = yaourt), puis le plus long, puis le plus exact
+        const score = -i*10 + L*2 - pen;
         if(!best || score>best.s) best={e:d.e,c:d.c,s:score};
         break;
       }
@@ -240,11 +331,11 @@ function addItem(raw){
   if(ex){ ex.qty = ex.done ? p.qty : (ex.qty + p.qty); ex.done=false; }
   else {
     const g=guess(p.name), h=state.hist[key];
-    state.items.unshift({id:uid(), name:p.name, qty:p.qty, done:false, emo:(g&&g.e)||(h&&h.emo)||'🛒', cat:(g&&g.c)||(h&&h.cat)||'z'});
+    state.items.unshift({id:uid(), name:p.name, qty:p.qty, done:false, emo:(h&&h.custom&&h.emo)||(g&&g.e)||(h&&h.emo)||'🛒', cat:(g&&g.c)||(h&&h.cat)||'z'});
   }
   const it=state.items.find(i=>norm(i.name)===key);
   const h=state.hist[key]||{name:p.name, n:0};
-  h.n++; h.name=p.name; h.emo=it.emo; h.cat=it.cat; h.t=Date.now(); state.hist[key]=h;
+  h.n++; h.name=p.name; if(!h.custom) h.emo=it.emo; h.cat=it.cat; h.t=Date.now(); state.hist[key]=h;
   store.save(); render();
 }
 function toggle(id){ const it=state.items.find(i=>i.id===id); if(!it) return; it.done=!it.done; store.save(); render(); }
@@ -273,7 +364,7 @@ const CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="#14181d" stroke-width=
 function row(it){
   return `<div class="item${it.done?' done':''}" data-id="${it.id}">
     <button class="check" data-act="toggle" aria-label="${it.done?'Remettre':'Cocher'} ${esc(it.name)}">${CHECK}</button>
-    <div class="emo">${it.emo}</div>
+    <button class="emo" data-act="emo" aria-label="Changer l’emoji">${it.emo}</button>
     <div class="name" data-act="toggle" tabindex="-1">${esc(it.name)}</div>
     <div class="qty${it.qty<=1?' one':''}">
       <button class="minus" data-act="minus" aria-label="Moins">−</button><span class="v">×${it.qty}</span><button data-act="plus" aria-label="Plus">+</button>
@@ -325,7 +416,7 @@ main.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   if(b.dataset.act==='clear'){ clearBasket(); return; }
   const row=b.closest('.item'); if(!row) return; const id=row.dataset.id;
-  ({toggle:()=>toggle(id), plus:()=>setQty(id,1), minus:()=>setQty(id,-1), del:()=>removeItem(id)})[b.dataset.act]?.();
+  ({emo:()=>openPicker(id), toggle:()=>toggle(id), plus:()=>setQty(id,1), minus:()=>setQty(id,-1), del:()=>removeItem(id)})[b.dataset.act]?.();
 });
 chips.addEventListener('click',e=>{
   const c=e.target.closest('.chip'); if(!c) return; const h=state.hist[c.dataset.key]; if(h){ addItem(h.name); input.value=''; updatePreview(); }
@@ -335,13 +426,32 @@ let lastEmo='🛒';
 function updatePreview(){
   const v=input.value.trim(); addBtn.disabled=!v;
   let emo='🛒';
-  if(v){ const p=parse(v), g=guess(p.name), h=state.hist[norm(p.name)]; emo=(g&&g.e)||(h&&h.emo)||'🛒'; }
+  if(v){ const p=parse(v), g=guess(p.name), h=state.hist[norm(p.name)]; emo=(h&&h.custom&&h.emo)||(g&&g.e)||(h&&h.emo)||'🛒'; }
   if(emo!==lastEmo){ preview.textContent=emo; preview.classList.add('pop'); setTimeout(()=>preview.classList.remove('pop'),150); lastEmo=emo; }
   renderChips();
 }
 input.addEventListener('input',updatePreview);
 $('vRayon').addEventListener('click',()=>{ state.view='rayon'; store.save(); render(); });
 $('vListe').addEventListener('click',()=>{ state.view='liste'; store.save(); render(); });
+
+/* Choisir l'emoji soi-même */
+const EXTRA_EMO='🍎🍏🍐🍊🍋🍌🍉🍇🍓🫐🍈🍒🍑🥭🍍🥥🥝🍅🍆🥑🫒🥦🥬🥒🌶️🫑🌽🥕🧄🧅🥔🍠🫚🫛🫘🥜🌰🍄🌿🌱🍞🥐🥖🫓🥨🥯🥞🧇🧀🍖🍗🥩🥓🍔🍟🍕🌭🥪🌮🌯🥙🧆🥚🍳🥘🍲🥣🥗🍿🧈🧂🥫🍱🍘🍙🍚🍛🍜🍝🍣🍤🍥🥟🦪🦀🦞🦐🦑🐟🍦🍧🍨🍩🍪🎂🍰🧁🥧🍫🍬🍭🍮🍯🍼🥛☕🫖🍵🧃🥤🧋🍶🍺🍻🥂🍷🥃🍸🍹🍾🧊💧🧴🧼🪥🧻🧽🧹🧺🗑️💊🩹💄🪒🔋💡🕯️🐾🐱🐶👶🛒🛍️🎁💐';
+let pickId=null;
+function openPicker(id){
+  const it=state.items.find(i=>i.id===id); if(!it) return; pickId=id;
+  const set=[]; for(const ch of Array.from(new Intl.Segmenter('fr',{granularity:'grapheme'}).segment(EXTRA_EMO),x=>x.segment)) if(!set.includes(ch)) set.push(ch);
+  for(const d of DICT) if(!set.includes(d.e)) set.push(d.e);
+  $('sheetTitle').textContent='Emoji pour « '+it.name+' »';
+  $('emoGrid').innerHTML=set.map(e=>`<button type="button" class="${e===it.emo?'on':''}">${e}</button>`).join('');
+  $('sheet').hidden=false;
+}
+$('emoGrid').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const it=state.items.find(i=>i.id===pickId);
+  if(it){ it.emo=b.textContent; const k=norm(it.name); const h=state.hist[k]||{name:it.name,n:0,cat:it.cat,t:Date.now()}; h.emo=it.emo; h.custom=true; state.hist[k]=h; store.save(); render(); }
+  $('sheet').hidden=true;
+});
+$('sheet').addEventListener('click',e=>{ if(e.target.id==='sheet') $('sheet').hidden=true; });
 
 /* Glisser vers la gauche pour supprimer */
 let sw=null;
