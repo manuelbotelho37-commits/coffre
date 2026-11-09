@@ -223,7 +223,7 @@ const pm=document.getElementById("pmax");cin.value=D.cin;cout.value=D.cout;pm.va
 pm.onchange=()=>{const v=parseInt(pm.value,10);D.pmax=v>0?v:80;pm.value=D.pmax;try{localStorage.setItem("fdr_dates",JSON.stringify(D))}catch(e){}render()};
 function setDates(){D.cin=cin.value;D.cout=cout.value;if(D.cin&&(!D.cout||D.cout<=D.cin)){const t=new Date(D.cin);t.setDate(t.getDate()+1);D.cout=t.toISOString().slice(0,10);cout.value=D.cout}try{localStorage.setItem("fdr_dates",JSON.stringify(D))}catch(e){}render()}
 cin.onchange=setDates;cout.onchange=setDates;
-const TRIG="trig_01AeQwY9R2tdjQUMufb8Nm2G",go=document.getElementById("go"),gost=document.getElementById("gost");
+const TRIG="trig_01L3zSH9YC3NSSSkX8CMz7MX",go=document.getElementById("go"),gost=document.getElementById("gost");
 const say=(t,c)=>{gost.textContent=t;gost.className="gost"+(c?" "+c:"")};
 go.onclick=async()=>{
   if(!D.cin||!D.cout){say("Choisissez d'abord vos dates d'arrivée et de départ.","bad");return}
