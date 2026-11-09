@@ -122,7 +122,6 @@ h1{background:var(--gold);-webkit-background-clip:text;background-clip:text;colo
 .brand{display:flex;gap:14px;align-items:center}.logo{width:96px;height:96px;border-radius:22px;flex:none;box-shadow:0 6px 24px rgba(0,0,0,.5)}.brand h1{font-size:2.4rem;margin:0}.brand .sub{margin:2px 0 0;font-size:.95rem}
 .gd{display:flex;flex-direction:column;gap:8px}.gdb{font:inherit;text-align:left;background:var(--soft);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;font-weight:600}.gdb small{display:block;font-weight:400;color:var(--muted);font-size:.82rem;margin-top:3px}.gdn{font:inherit;align-self:flex-start;background:transparent;color:var(--accent);border:1px solid #4a4130;border-radius:999px;padding:7px 14px;cursor:pointer}
 .tabs{display:flex;gap:8px;margin:18px 0 0}.tabs button{flex:1;font:inherit;font-weight:700;font-size:1.05rem;padding:12px;border-radius:12px;border:1px solid #4a4130;background:var(--soft);color:var(--accent);cursor:pointer}.tabs button[aria-selected=true]{background:var(--gold);color:#111113;border-color:transparent}
-.wa{display:block;text-align:center;text-decoration:none;font-weight:700;font-size:1.05rem;padding:12px 14px;border-radius:12px;border:1px solid #6b5626;background:var(--soft);color:var(--accent)}
 </style>
 </head>
 <body>
@@ -208,23 +207,6 @@ function route(r){const i=LINE.indexOf(r.st),west=i<REF,dir=west?LN[CUR].dw:LN[C
     <li><b>${r.n} stations</b>, ≈ ${r.m} min :<div class="stops">${stops.map((s,j)=>`<span class="${j===0?"dep":j===stops.length-1?"arr":""}">${s}</span>`).join("")}</div></li>
     <li>Descendez à <b>Franklin D. Roosevelt</b> · total ≈ ${r.tot} min depuis l'hôtel</li>
   </ol>`}
-function waLink(rows,inB){const L=[],eur=v=>v+" €";
-  L.push("🗼 Métro Dodo · Ligne "+CUR+" → Franklin D. Roosevelt");
-  L.push(rows.length+" hôtels · "+inB+" sous "+D.pmax+" € la nuit · 1 personne · "+RELEVE.dates);
-  rows.forEach((r,k)=>{const i=LINE.indexOf(r.st),dir=i<REF?LN[CUR].dw:LN[CUR].de,c=car(r.st,r.dist);
-    const ok=r.sites.filter(s=>s[1]!=null),b=ok.length?ok.reduce((a,x)=>x[1]<a[1]?x:a):null;
-    L.push("");
-    L.push((k+1)+". "+r.name);
-    if(r.price!=null)L.push("💶 "+eur(r.price)+" la nuit"+(r.total!=null?" · "+eur(r.total)+" pour les "+RELEVE.nuits+" nuits":""));
-    L.push("⭐ "+r.type);
-    if(r.ids.adr)L.push("📍 "+r.ids.adr);
-    L.push("🚇 "+r.w+" min à pied jusqu'au métro "+r.st+", ligne "+CUR+" direction "+dir+", "+r.n+" station"+(r.n>1?"s":"")+" (≈ "+r.m+" min) jusqu'à Franklin D. Roosevelt · total ≈ "+r.tot+" min");
-    if(c)L.push("🚗 Voiture/Uber (≈ "+String(c.km).replace(".",",")+" km) : "+c.slots.map(x=>x[0]+" ≈ "+x[1]+" min").join(" · "));
-    if(r.warn)L.push("⚠️ "+r.warn);
-    if(b)L.push("👉 Meilleur prix : "+b[0]+" "+eur(b[1])+" : "+(b[0]==="Expedia"?exPage(r):hcPage(r)));
-  });
-  L.push("");L.push("Prix relevés le "+RELEVE.le+", taxes comprises.");
-  return "https://wa.me/?text="+enc(L.join("\n"))}
 function render(){showNights();
   const rows=LN[CUR].H.filter(h=>h[6]==null||h[6]<=D.pmax).map(h=>{const i=LINE.indexOf(h[0]),n=Math.abs(i-REF),m=Math.round(n*PER),w=walkMin(h[2]);return{st:h[0],name:h[1],dist:h[2],type:h[3],warn:h[4],area:h[5],price:h[6],total:h[7],sites:h[8]||[],ids:h[9]||{},n,m,w,tot:w+m,side:i<REF?"ouest":"est"}}).sort((a,b)=>a.tot-b.tot);
   const inB=rows.filter(r=>r.price!=null&&r.price<=D.pmax).length,noP=rows.filter(r=>r.price==null).length;
@@ -246,7 +228,6 @@ function render(){showNights();
     <b class="rt">${rows.length} hôtels à moins de ${D.pmax} € sur la ligne ${CUR}</b>
     <span class="rs">Sur les stations à 15 stations maximum de Franklin D. Roosevelt · classés du plus proche au plus loin · 1 personne · ${RELEVE.dates}</span>
     <div class="chips"><span class="ck ok">${inB} sous ${D.pmax} € la nuit</span><span class="ck">prix comparés : Hotels.com et Expedia</span></div>
-    <a class="wa" href="${waLink(rows,inB)}" target="_blank" rel="noopener">📲 Envoyer la liste sur WhatsApp</a>
     <ol class="best">${rows.map(card).join("")}</ol>
     <div class="over">Seuls les hôtels dont j'ai relevé le prix exact sont affichés.</div>
     <span class="note">Prix relevés par Claude sur Hotels.com et Expedia le ${RELEVE.le}, taxes comprises. Pour d'autres dates, écrivez-les à Claude : il refait le relevé et met cette page à jour.</span>`;
