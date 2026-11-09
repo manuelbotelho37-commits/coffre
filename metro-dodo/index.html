@@ -222,7 +222,7 @@ function render(){showNights();
       ${r.warn?(r.warn.startsWith("Distance estimée")?`<li class="est">${r.warn}</li>`:`<li class="warn">⚠ ${r.warn}</li>`):""}
     </ul>
     <details class="metro"><summary>🚇 Itinéraire métro jusqu'à Franklin D. Roosevelt</summary>${route(r)}</details>
-    <div class="links"><a class="main" href="${hcPage(r)}" target="_blank" rel="noopener">Ouvrir sur Hotels.com</a><a href="${exPage(r)}" target="_blank" rel="noopener">Ouvrir sur Expedia</a><a href="${booking(r.name+" "+r.area)}" target="_blank" rel="noopener">Booking</a><a href="https://www.google.com/maps/search/?api=1&query=${enc(r.name+", "+(r.ids.adr||r.area))}" target="_blank" rel="noopener">Plan et avis</a></div>
+    <div class="links">${(()=>{const pr=n=>{const s=r.sites.find(x=>x[0]===n);return s?s[1]:null},ph=pr("Hotels.com"),pe=pr("Expedia");const exFirst=pe!=null&&(ph==null||pe<ph);const H1=`<a class="${exFirst?"":"main"}" href="${hcPage(r)}" target="_blank" rel="noopener">${!exFirst&&ph!=null?"Meilleur prix : ":""}Hotels.com${ph!=null?" "+ph+" €":""}</a>`,E1=`<a class="${exFirst?"main":""}" href="${exPage(r)}" target="_blank" rel="noopener">${exFirst?"Meilleur prix : ":""}Expedia${pe!=null?" "+pe+" €":""}</a>`;return exFirst?E1+H1:H1+E1})()}<a href="${booking(r.name+" "+r.area)}" target="_blank" rel="noopener">Booking</a><a href="https://www.google.com/maps/search/?api=1&query=${enc(r.name+", "+(r.ids.adr||r.area))}" target="_blank" rel="noopener">Plan et avis</a></div>
   </li>`;
   document.getElementById("synth").innerHTML=`
     <b class="rt">${rows.length} hôtels à moins de ${D.pmax} € sur la ligne ${CUR}</b>
