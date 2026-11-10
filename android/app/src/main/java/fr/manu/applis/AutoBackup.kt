@@ -74,7 +74,23 @@ object AutoBackup {
         }, 1, TimeUnit.SECONDS)
     }
 
-    private fun write(context: Context, name: String, bytes: ByteArray, prune: Boolean) {
+    /** Sauvegarde complète du jour, avec les fichiers joints (format de la page), 3 jours gardés. */
+    fun onFullFile(context: Context, b64: String): Boolean = try {
+        val bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT)
+        if (bytes.size < 16) throw Exception("vide")
+        val ctx = context.applicationContext
+        val day = SimpleDateFormat("yyyy-MM-dd", Locale.FRANCE).format(Date())
+        val p = "$app-sauvegarde-complete-auto-"
+        executor.execute { try { write(ctx, "$p$day.${app.lowercase()}", bytes, true, p, 3, "application/octet-stream") } catch (e: Exception) { } }
+        true
+    } catch (e: Exception) {
+        false
+    }
+
+    private fun write(
+        context: Context, name: String, bytes: ByteArray, prune: Boolean,
+        pfx: String = prefix, keepN: Int = KEEP, mime: String = "application/json"
+    ) {
         val cr = context.contentResolver
         val coll = MediaStore.Downloads.EXTERNAL_CONTENT_URI
         val found = mutableListOf<Pair<Uri, String>>()
@@ -82,7 +98,7 @@ object AutoBackup {
             coll,
             arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME),
             MediaStore.Downloads.RELATIVE_PATH + "=? AND " + MediaStore.Downloads.DISPLAY_NAME + " LIKE ?",
-            arrayOf(folder, if (prune) "$prefix%" else name),
+            arrayOf(folder, if (prune) "$pfx%" else name),
             MediaStore.Downloads.DISPLAY_NAME + " DESC"
         )?.use { c ->
             while (c.moveToNext()) found.add(Pair(ContentUris.withAppendedId(coll, c.getLong(0)), c.getString(1)))
@@ -90,12 +106,12 @@ object AutoBackup {
         val existing = found.firstOrNull { it.second == name }?.first
         val uri = existing ?: cr.insert(coll, ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, name)
-            put(MediaStore.Downloads.MIME_TYPE, "application/json")
+            put(MediaStore.Downloads.MIME_TYPE, mime)
             put(MediaStore.Downloads.RELATIVE_PATH, folder)
         }) ?: throw Exception("insert")
         cr.openOutputStream(uri, "wt")?.use { it.write(bytes) } ?: throw Exception("flux")
         if (!prune) return
-        val keep = (found.map { it.second } + name).distinct().sortedDescending().take(KEEP).toSet()
+        val keep = (found.map { it.second } + name).distinct().sortedDescending().take(keepN).toSet()
         for ((u, n) in found) if (n !in keep) try { cr.delete(u, null, null) } catch (e: Exception) { }
     }
 }

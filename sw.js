@@ -1,5 +1,5 @@
-const CACHE='coffre-v23';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./pdfjs/pdf.min.mjs','./pdfjs/pdf.worker.min.mjs'];
+const CACHE='coffre-v24';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./fonts/fonts.css','./fonts/CormorantGaramond-latin.woff2','./fonts/SourceSans3-latin.woff2','./pdfjs/pdf.min.mjs','./pdfjs/pdf.worker.min.mjs'];
 // lecteur de PDF : polices et décodeurs gardés sur le téléphone pour lire sans internet
 const EXTRA=['./pdfjs/wasm/openjpeg.wasm','./pdfjs/wasm/jbig2.wasm','./pdfjs/wasm/qcms_bg.wasm','./pdfjs/wasm/openjpeg_nowasm_fallback.js','./pdfjs/wasm/jbig2_nowasm_fallback.js',
   './pdfjs/standard_fonts/FoxitDingbats.pfb','./pdfjs/standard_fonts/FoxitFixed.pfb','./pdfjs/standard_fonts/FoxitFixedBold.pfb','./pdfjs/standard_fonts/FoxitFixedBoldItalic.pfb','./pdfjs/standard_fonts/FoxitFixedItalic.pfb',

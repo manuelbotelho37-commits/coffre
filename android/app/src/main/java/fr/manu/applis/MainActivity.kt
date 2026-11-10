@@ -254,7 +254,18 @@ class MainActivity : AppCompatActivity() {
             } catch (e) {}
           };
           const send = () => { if (wasEmpty) return; clearTimeout(t); t = setTimeout(go, 1500); };
-          document.addEventListener('visibilitychange', () => { if (document.hidden && !wasEmpty) { clearTimeout(t); go(); } });
+          // Une fois par jour, sauvegarde complète avec les fichiers joints, si l'appli sait la faire (ex. Coffre).
+          const full = async () => {
+            try {
+              if (typeof buildFullBlob !== 'function') return;
+              const day = new Date().toISOString().slice(0, 10);
+              if (localStorage.getItem('__autoComplete') === day) return;
+              const { blob } = await buildFullBlob();
+              const b64 = await new Promise((ok, ko) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1] || ''); fr.onerror = ko; fr.readAsDataURL(blob); });
+              if (AndroidBackup.fullFile(b64)) set.call(localStorage, '__autoComplete', day);
+            } catch (e) {}
+          };
+          document.addEventListener('visibilitychange', () => { if (document.hidden && !wasEmpty) { clearTimeout(t); go(); full(); } });
           window.__androidRestore = (txt) => {
             const o = JSON.parse(txt);
             if (o && o.donnees) { localStorage.clear(); for (const k in o.donnees) localStorage.setItem(k, o.donnees[k]); setTimeout(() => location.reload(), 300); return 'ok'; }
@@ -292,6 +303,9 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun changedPage(text: String) = AutoBackup.onChangePage(this@MainActivity, text)
+
+        @JavascriptInterface
+        fun fullFile(b64: String): Boolean = AutoBackup.onFullFile(this@MainActivity, b64)
 
         @JavascriptInterface
         fun empty() {

@@ -28,6 +28,7 @@ android {
             applicationId "fr.manu.coffre"
             resValue "string", "app_name", "Coffre"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/"'
+            buildConfigField "boolean", "BUNDLED", 'true'
         }
         depenses {
             dimension "appli"
@@ -81,6 +82,7 @@ android {
     sourceSets {
         courses { assets.srcDirs = ["$buildDir/www-courses"] }
         vente { assets.srcDirs = ["$buildDir/www-vente"] }
+        coffre { assets.srcDirs = ["$buildDir/www-coffre"] }
     }
 
     buildFeatures {
@@ -117,9 +119,20 @@ tasks.register('copyWwwCourses', Copy) {
     from(rootProject.file('../courses')) { exclude 'sw.js' }
     into "$buildDir/www-courses/www"
 }
+// Bibliothèques venant d'internet (cdnjs), téléchargées par android.yml dans ../cdn-libs.
+def cdnLibs = rootProject.file('../cdn-libs')
+
 // Vente vit dans son propre dépôt : le build le récupère dans ../vente-src (voir android.yml).
 tasks.register('copyWwwVente', Copy) {
     from(rootProject.file('../vente-src')) { exclude 'sw.js', '.git', '.git/**', '.github/**', 'index-1.html', 'icon-*-1.png' }
     into "$buildDir/www-vente/www"
+    from(cdnLibs) { into 'cdn' }
 }
-preBuild.dependsOn 'copyWwwCourses', 'copyWwwVente'
+
+// Coffre : la page à la racine du dépôt (sans les autres applis rangées dans ses sous-dossiers).
+tasks.register('copyWwwCoffre', Copy) {
+    from(rootProject.file('..')) { include 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'pdfjs/**', 'fonts/**' }
+    into "$buildDir/www-coffre/www"
+    from(cdnLibs) { into 'cdn' }
+}
+preBuild.dependsOn 'copyWwwCourses', 'copyWwwVente', 'copyWwwCoffre'
