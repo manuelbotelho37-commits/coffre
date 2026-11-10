@@ -225,6 +225,22 @@ class MainActivity : AppCompatActivity() {
     private val backupHook = """
         (function(){
           if (window.__androidBackupHook || !window.AndroidBackup) return; window.__androidBackupHook = true;
+          // L'ancienne version de la page (gardée par son « service worker ») ne doit plus jamais
+          // s'afficher : on retire ce service worker et ses copies, puis on recharge une fois.
+          try {
+            if (navigator.serviceWorker) {
+              // La page est déjà dans l'appli : plus besoin de service worker.
+              navigator.serviceWorker.register = () => new Promise(() => {});
+              navigator.serviceWorker.getRegistrations().then(rs => {
+              if (!rs.length) return;
+              if (sessionStorage.getItem('__swNettoye')) return; // une seule fois, jamais en boucle
+              sessionStorage.setItem('__swNettoye', '1');
+              Promise.all(rs.map(r => r.unregister()))
+                .then(() => window.caches ? caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))) : null)
+                .then(() => location.reload());
+              });
+            }
+          } catch (e) {}
           // Appli vide à l'ouverture (par exemple après une réinstallation) : on propose de récupérer
           // la sauvegarde, et on n'écrase surtout pas les sauvegardes existantes avec du vide.
           const wasEmpty = localStorage.length === 0;
