@@ -390,7 +390,8 @@ function row(it){
   </div>`;
 }
 function render(){
-  const todo=state.items.filter(i=>!i.done), done=state.items.filter(i=>i.done);
+  const abc=(x,y)=>x.name.localeCompare(y.name,'fr',{sensitivity:'base',numeric:true});
+  const todo=state.items.filter(i=>!i.done).sort(abc), done=state.items.filter(i=>i.done).sort(abc);
   $('count').innerHTML = state.items.length
     ? (todo.length ? `<b>${todo.length}</b> à acheter${done.length?` · ${done.length} dans le panier`:''}` : `Tout est dans le panier 🎉`)
     : 'Liste vide';
