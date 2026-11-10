@@ -6,7 +6,7 @@
 <title>Caddie</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#14181d">
+<meta name="theme-color" content="#0c0c0e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,13 +15,13 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
   /* Une colonne : liste groupée par rayon, barre d'ajout fixée en bas. Palette des applis Dépenses / Coffre. */
   :root{
-    --bg:#14181d; --surface:#1c222a; --surface2:#242b34; --line:#323a45;
-    --text:#e9e7e1; --dim:#8b94a1; --brass:#c89b3c; --brass2:#e2bd6a; --green:#5f9e79; --red:#c4635a;
-    --sans:'Inter',system-ui,-apple-system,sans-serif; --serif:'Fraunces',Georgia,serif;
+    --bg:#0c0c0e; --surface:#17171a; --surface2:#1f1e1c; --line:#33302a;
+    --text:#f3ead6; --dim:#a69c86; --brass:#c89b3c; --brass2:#e2bd6a; --green:#5f9e79; --red:#c4635a;
+    --sans:"Source Sans 3",system-ui,-apple-system,sans-serif; --serif:"Cormorant Garamond",Georgia,serif;
     color-scheme:dark;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -129,6 +129,19 @@
   .grid button.on{border-color:var(--brass);}
   button:focus-visible,.name:focus-visible{outline:2px solid var(--brass); outline-offset:2px;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+
+/* Thème Métro Dodo : écriture dorée, or dégradé, noir chaud */
+:root{--bg:#0c0c0e;--surface:#17171a;--surface2:#1f1e1c;--line:#33302a;--text:#f3ead6;--dim:#a69c86;--brass:#d4a94e;--brass2:#e2c275;--brass-dim:#8f7331;
+--s:#17171a;--s2:#1f1e1c;--gold:#d4a94e;--gold2:#e2c275;--mdgold:linear-gradient(135deg,#f7e3a1 0%,#d4a94e 45%,#a87b2c 72%,#ecd08a 100%)}
+html,body{background:radial-gradient(120% 60% at 30% 0%,#26241f 0%,#0c0c0e 60%) fixed,#0c0c0e!important}
+html{font-size:106.25%}
+body{font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
+*{font-variant-numeric:lining-nums}
+h1,.titre-or{font-family:"Cormorant Garamond","DejaVu Serif",Georgia,serif!important;background:var(--mdgold);-webkit-background-clip:text;background-clip:text;color:transparent!important;font-weight:600!important;letter-spacing:.01em}
+h1 button,h1 span,h1 a{color:var(--text)}
+.addbtn,.ask .yes,.tabs button.on,.seg button.on{background:var(--mdgold)!important;color:#111113!important;border-color:transparent!important}
+.tabs button:not(.on),.seg button:not(.on){color:var(--brass2)}
+
 </style>
 </head>
 <body>
@@ -391,7 +404,7 @@ $('toastBtn').addEventListener('click',()=>{ if(undo){ undo(); undo=null; store.
 
 /* ---------- Rendu ---------- */
 const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="#14181d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
+const CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="#0c0c0e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"/></svg>';
 function row(it){
   const asking = askId===it.id, del = asking && askMode==='del';
   return `<div class="item${it.done?' done':''}${asking?' asking':''}${del?' deling':''}" data-id="${it.id}">
