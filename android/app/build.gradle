@@ -15,6 +15,8 @@ android {
         // adresse de retour après la connexion Gmail (utile seulement pour le Classeur)
         manifestPlaceholders = [authScheme: "frmanuapp"]
         buildConfigField "String", "AUTH_SCHEME", '"frmanuapp"'
+        // false : la page vient d'internet ; true : la page est rangée dans l'appli (appli autonome)
+        buildConfigField "boolean", "BUNDLED", 'false'
     }
 
     // Une appli par page : chacune a ses propres données, rangées dans l'appli (pas dans Chrome).
@@ -22,24 +24,28 @@ android {
     productFlavors {
         coffre {
             dimension "appli"
+            buildConfigField "String", "APK_NAME", '"Coffre"'
             applicationId "fr.manu.coffre"
             resValue "string", "app_name", "Coffre"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/"'
         }
         depenses {
             dimension "appli"
+            buildConfigField "String", "APK_NAME", '"Depenses"'
             applicationId "fr.manu.depenses"
             resValue "string", "app_name", "Dépenses"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/depenses/"'
         }
         vente {
             dimension "appli"
+            buildConfigField "String", "APK_NAME", '"Vente"'
             applicationId "fr.manu.vente"
             resValue "string", "app_name", "Vente"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/vente/"'
         }
         classeur {
             dimension "appli"
+            buildConfigField "String", "APK_NAME", '"Classeur"'
             applicationId "fr.manu.classeur"
             resValue "string", "app_name", "Classeur"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/classeur/"'
@@ -48,22 +54,31 @@ android {
         }
         metrodo {
             dimension "appli"
+            buildConfigField "String", "APK_NAME", '"MetroDodo"'
             applicationId "fr.manu.metrodo"
             resValue "string", "app_name", "Métro Dodo"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/metro-dodo/"'
         }
         poker {
             dimension "appli"
+            buildConfigField "String", "APK_NAME", '"Poker"'
             applicationId "fr.manu.poker"
             resValue "string", "app_name", "Poker Win"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/poker/"'
         }
         courses {
             dimension "appli"
+            buildConfigField "String", "APK_NAME", '"Caddie"'
             applicationId "fr.manu.courses"
             resValue "string", "app_name", "Caddie"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/courses/"'
+            buildConfigField "boolean", "BUNDLED", 'true'
         }
+    }
+
+    // Applis autonomes : leur page (dossier du dépôt) est copiée dans l'appli au moment du build.
+    sourceSets {
+        courses { assets.srcDirs = ["$buildDir/www-courses"] }
     }
 
     buildFeatures {
@@ -94,3 +109,10 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.webkit:webkit:1.12.1'
 }
+
+// Copie la page de Caddie (dossier courses/ du dépôt) dans l'appli, sous assets/www/.
+tasks.register('copyWwwCourses', Copy) {
+    from(rootProject.file('../courses')) { exclude 'sw.js' }
+    into "$buildDir/www-courses/www"
+}
+preBuild.dependsOn 'copyWwwCourses'

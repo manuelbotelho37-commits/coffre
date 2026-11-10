@@ -6,6 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'android/**'
+      - 'courses/**'
       - '.github/workflows/android.yml'
 
 permissions:
@@ -82,3 +83,6 @@ jobs:
           cp app/build/outputs/apk/courses/debug/app-courses-debug.apk Caddie.apk
           gh release view applis-android >/dev/null 2>&1 || gh release create applis-android --title "Applis Android" --notes "Coffre.apk, Depenses.apk et Vente.apk : les vraies applis, avec leurs données rangées dans l'appli."
           gh release upload applis-android Coffre.apk Depenses.apk Vente.apk Poker.apk Classeur.apk MetroDodo.apk Caddie.apk --clobber
+          # Numéro de version lu par le bandeau « Nouvelle version disponible » (envoyé en dernier, une fois les APK en ligne).
+          echo "$GITHUB_RUN_NUMBER" > version.txt
+          gh release upload applis-android version.txt --clobber
