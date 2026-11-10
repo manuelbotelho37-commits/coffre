@@ -39,6 +39,16 @@
   .seg button{border:0; background:none; color:var(--dim); font:inherit; font-size:.8rem; padding:6px 11px; border-radius:999px; cursor:pointer;}
   .seg button.on{background:var(--surface2); color:var(--text);}
 
+  .tabs{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:4px; margin:0 0 6px;}
+  .tabs button{flex:1; border:0; background:none; color:var(--dim); font:inherit; font-size:.92rem; font-weight:500; padding:10px 8px; border-radius:9px; cursor:pointer;}
+  .tabs button.on{background:var(--surface2); color:var(--brass2);}
+  .tabs .n{font-size:.78rem; color:var(--dim); margin-left:4px; font-variant-numeric:tabular-nums;}
+  .search{width:100%; margin:8px 0 2px; padding:12px 14px; background:var(--surface2); border:1px solid var(--line); border-radius:12px; color:var(--text); font:inherit;}
+  .search:focus{outline:none; border-color:var(--brass);}
+  .old .sub{display:block; font-size:.78rem; color:var(--dim); margin-top:2px;}
+  .old .name{cursor:default;}
+  .addold{flex:none; font:inherit; font-size:.88rem; font-weight:600; height:36px; padding:0 12px; border-radius:10px; cursor:pointer; background:none; border:1px solid var(--brass); color:var(--brass2);}
+  .inlist{flex:none; font-size:.82rem; color:var(--green); padding:0 6px;}
   .group{margin-top:14px;}
   .ghead{display:flex; align-items:center; gap:8px; font-size:.72rem; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:0 0 8px 4px;}
   .ghead span.n{color:var(--line); font-variant-numeric:tabular-nums;}
@@ -133,10 +143,18 @@
       <button type="button" id="vListe">Liste</button>
     </div>
   </header>
+  <nav class="tabs" aria-label="Onglets">
+    <button type="button" id="tList" class="on">Ma liste</button>
+    <button type="button" id="tOld">Anciens achats<span class="n" id="oldN"></span></button>
+  </nav>
   <main id="main"></main>
+  <section id="old" hidden>
+    <input class="search" id="oldSearch" type="search" placeholder="Chercher un ancien achat…" aria-label="Chercher un ancien achat" autocomplete="off">
+    <div id="oldList"></div>
+  </section>
 </div>
 
-<div class="bar">
+<div class="bar" id="bar">
   <div class="bar-in">
     <div class="chips" id="chips" aria-label="Souvent acheté"></div>
     <form class="add" id="addForm" autocomplete="off">
@@ -417,7 +435,59 @@ function render(){
   }
   main.innerHTML=html;
   renderChips();
+  renderTabs();
 }
+
+/* ---------- Onglet « Anciens achats » ---------- */
+let tab='list', forgetKey=null;
+function renderTabs(){
+  const isOld = tab==='old';
+  $('tList').classList.toggle('on',!isOld); $('tOld').classList.toggle('on',isOld);
+  main.hidden=isOld; $('old').hidden=!isOld; $('bar').hidden=isOld;
+  document.querySelector('.seg').style.visibility = isOld ? 'hidden' : '';
+  const nOld=Object.keys(state.hist).length; $('oldN').textContent = nOld ? nOld : '';
+  if(isOld){ $('count').innerHTML = nOld ? `<b>${nOld}</b> produits déjà achetés` : 'Aucun ancien achat'; renderOld(); }
+}
+function renderOld(){
+  const inList=new Set(state.items.filter(i=>!i.done).map(i=>norm(i.name)));
+  const q=norm($('oldSearch').value);
+  const all=Object.entries(state.hist).map(([k,h])=>({k,...h})).filter(h=>!q||h.k.includes(q))
+    .sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base',numeric:true}));
+  let html='';
+  if(!Object.keys(state.hist).length){
+    html=`<div class="empty"><div class="big">🧾</div><h2>Pas encore d’anciens achats</h2><p>Chaque produit que tu ajoutes à ta liste sera gardé ici pour la prochaine fois.</p></div>`;
+  } else if(!all.length){
+    html=`<div class="empty"><p>Rien ne correspond à « ${esc($('oldSearch').value)} ».</p></div>`;
+  } else {
+    for(const c of CAT_ORDER){
+      const g=all.filter(h=>(h.cat||'z')===c); if(!g.length) continue;
+      html+=`<section class="group"><div class="ghead">${CATS[c].label} <span class="n">${g.length}</span></div><div class="list">${g.map(h=>{
+        const asking=forgetKey===h.k;
+        const right = asking
+          ? `<div class="ask"><button type="button" data-oact="forgetNo">Non</button><button type="button" class="yes red" data-oact="forgetYes">Oublier</button></div>`
+          : (inList.has(h.k) ? `<span class="inlist">✓ Dans la liste</span>` : `<button type="button" class="addold" data-oact="add">+ Ajouter</button>`)
+            + `<button class="del" data-oact="forget" aria-label="Oublier ${esc(h.name)}">✕</button>`;
+        return `<div class="item old${asking?' asking deling':''}" data-key="${esc(h.k)}">
+          <div class="emo" style="display:grid">${h.emo||'🛒'}</div>
+          <div class="name">${esc(h.name)}<span class="sub">Acheté ${h.n>1?h.n+' fois':'1 fois'}</span></div>
+          ${right}
+        </div>`;}).join('')}</div></section>`;
+    }
+  }
+  $('oldList').innerHTML=html;
+}
+$('oldList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-oact]'); const r=e.target.closest('.item');
+  if(!b||!r){ if(forgetKey){ forgetKey=null; renderOld(); } return; }
+  const k=r.dataset.key, h=state.hist[k]; const a=b.dataset.oact;
+  if(a==='add' && h){ addItem(h.name); }
+  else if(a==='forget'){ forgetKey=k; renderOld(); }
+  else if(a==='forgetNo'){ forgetKey=null; renderOld(); }
+  else if(a==='forgetYes'){ forgetKey=null; delete state.hist[k]; store.save(); render(); }
+});
+$('oldSearch').addEventListener('input',renderOld);
+$('tList').addEventListener('click',()=>{ tab='list'; forgetKey=null; render(); window.scrollTo(0,0); });
+$('tOld').addEventListener('click',()=>{ tab='old'; askId=null; render(); window.scrollTo(0,0); });
 function renderChips(){
   const inList=new Set(state.items.filter(i=>!i.done).map(i=>norm(i.name)));
   const q=norm(input.value);
