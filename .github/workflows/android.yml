@@ -31,6 +31,12 @@ jobs:
           repository: manuelbotelho37-commits/vente
           path: vente-src
 
+      - name: Récupérer la page de Dépenses (dépôt depenses)
+        uses: actions/checkout@v4
+        with:
+          repository: manuelbotelho37-commits/depenses
+          path: depenses-src
+
       - name: Ranger dans l'appli les bibliothèques venant d'internet
         working-directory: .
         run: |

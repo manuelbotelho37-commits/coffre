@@ -36,6 +36,7 @@ android {
             applicationId "fr.manu.depenses"
             resValue "string", "app_name", "Dépenses"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/depenses/"'
+            buildConfigField "boolean", "BUNDLED", 'true'
         }
         vente {
             dimension "appli"
@@ -83,6 +84,7 @@ android {
         courses { assets.srcDirs = ["$buildDir/www-courses"] }
         vente { assets.srcDirs = ["$buildDir/www-vente"] }
         coffre { assets.srcDirs = ["$buildDir/www-coffre"] }
+        depenses { assets.srcDirs = ["$buildDir/www-depenses"] }
     }
 
     buildFeatures {
@@ -135,4 +137,10 @@ tasks.register('copyWwwCoffre', Copy) {
     into "$buildDir/www-coffre/www"
     from(cdnLibs) { into 'cdn' }
 }
-preBuild.dependsOn 'copyWwwCourses', 'copyWwwVente', 'copyWwwCoffre'
+// Dépenses vit dans son propre dépôt : récupéré dans ../depenses-src (voir android.yml).
+tasks.register('copyWwwDepenses', Copy) {
+    from(rootProject.file('../depenses-src')) { exclude 'sw.js', '.git', '.git/**', '.github/**', 'README.md' }
+    into "$buildDir/www-depenses/www"
+    from(cdnLibs) { into 'cdn' }
+}
+preBuild.dependsOn 'copyWwwCourses', 'copyWwwVente', 'copyWwwCoffre', 'copyWwwDepenses'

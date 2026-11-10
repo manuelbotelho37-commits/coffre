@@ -57,6 +57,7 @@ object AutoBackup {
         val o = JSONObject(text)
         (o.optJSONObject("donnees")?.length() ?: 0) > 0 ||
             (o.optJSONArray("clients")?.length() ?: 0) > 0 ||
+            (o.optJSONObject("data")?.optJSONArray("exp")?.length() ?: 0) > 0 ||
             o.optString("notes", "").isNotBlank()
     } catch (e: Exception) {
         false

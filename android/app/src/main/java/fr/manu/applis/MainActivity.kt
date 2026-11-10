@@ -250,6 +250,7 @@ class MainActivity : AppCompatActivity() {
           const go = async () => {
             try {
               if (typeof buildBackupFile === 'function') { const f = await buildBackupFile(); AndroidBackup.changedPage(await f.text()); }
+              else if (typeof buildBackup === 'function') { const r = await buildBackup(); AndroidBackup.changedPage(r.json); }
               else AndroidBackup.changed(JSON.stringify(dump()));
             } catch (e) {}
           };
@@ -270,6 +271,7 @@ class MainActivity : AppCompatActivity() {
             const o = JSON.parse(txt);
             if (o && o.donnees) { localStorage.clear(); for (const k in o.donnees) localStorage.setItem(k, o.donnees[k]); setTimeout(() => location.reload(), 300); return 'ok'; }
             if (o && Array.isArray(o.clients) && typeof confirmRestore === 'function') { __pendingRestore = o; confirmRestore(); return 'ok'; }
+            if (o && o.app === 'depenses' && typeof backupLoad === 'function') { backupLoad({ files: [new File([txt], 'sauvegarde.json')], value: '' }); return 'ok'; }
             return 'non';
           };
           const S = Storage.prototype, set = S.setItem, rem = S.removeItem, clr = S.clear;
