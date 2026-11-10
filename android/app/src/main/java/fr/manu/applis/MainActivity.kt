@@ -225,6 +225,7 @@ class MainActivity : AppCompatActivity() {
     private val backupHook = """
         (function(){
           if (window.__androidBackupHook || !window.AndroidBackup) return; window.__androidBackupHook = true;
+          const APP = '${BuildConfig.APK_NAME}';
           // L'ancienne version de la page (gardée par son « service worker ») ne doit plus jamais
           // s'afficher : on retire ce service worker et ses copies, puis on recharge une fois.
           try {
@@ -250,7 +251,7 @@ class MainActivity : AppCompatActivity() {
           const go = async () => {
             try {
               if (typeof buildBackupFile === 'function') { const f = await buildBackupFile(); AndroidBackup.changedPage(await f.text()); }
-              else if (typeof buildBackup === 'function') { const r = await buildBackup(); AndroidBackup.changedPage(r.json); }
+              else if (APP === 'Depenses' && typeof buildBackup === 'function') { const r = await buildBackup(); AndroidBackup.changedPage(r.json); }
               else AndroidBackup.changed(JSON.stringify(dump()));
             } catch (e) {}
           };
@@ -279,7 +280,8 @@ class MainActivity : AppCompatActivity() {
           S.removeItem = function(){ const r = rem.apply(this, arguments); if (this === localStorage) send(); return r; };
           S.clear = function(){ const r = clr.apply(this, arguments); if (this === localStorage) send(); return r; };
           window.addEventListener('load', () => {
-            if (wasEmpty) { try { AndroidBackup.empty(); } catch (e) {} } else send();
+            // (Classeur range ses mails ailleurs, chiffrés, et les sauvegarde déjà dans Gmail.)
+            if (wasEmpty) { if (APP !== 'Classeur') try { AndroidBackup.empty(); } catch (e) {} } else send();
           });
         })();
     """.trimIndent()

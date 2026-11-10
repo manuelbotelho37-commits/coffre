@@ -52,6 +52,7 @@ android {
             applicationId "fr.manu.classeur"
             resValue "string", "app_name", "Classeur"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/classeur/"'
+            buildConfigField "boolean", "BUNDLED", 'true'
             manifestPlaceholders = [authScheme: "frmanuclasseur"]
             buildConfigField "String", "AUTH_SCHEME", '"frmanuclasseur"'
         }
@@ -85,6 +86,7 @@ android {
         vente { assets.srcDirs = ["$buildDir/www-vente"] }
         coffre { assets.srcDirs = ["$buildDir/www-coffre"] }
         depenses { assets.srcDirs = ["$buildDir/www-depenses"] }
+        classeur { assets.srcDirs = ["$buildDir/www-classeur"] }
     }
 
     buildFeatures {
@@ -143,4 +145,10 @@ tasks.register('copyWwwDepenses', Copy) {
     into "$buildDir/www-depenses/www"
     from(cdnLibs) { into 'cdn' }
 }
-preBuild.dependsOn 'copyWwwCourses', 'copyWwwVente', 'copyWwwCoffre', 'copyWwwDepenses'
+// Classeur vit dans son propre dépôt : récupéré dans ../classeur-src (voir android.yml).
+tasks.register('copyWwwClasseur', Copy) {
+    from(rootProject.file('../classeur-src')) { exclude 'sw.js', '.git', '.git/**', '.github/**', 'cap-du-jour/**' }
+    into "$buildDir/www-classeur/www"
+    from(cdnLibs) { into 'cdn' }
+}
+preBuild.dependsOn 'copyWwwCourses', 'copyWwwVente', 'copyWwwCoffre', 'copyWwwDepenses', 'copyWwwClasseur'

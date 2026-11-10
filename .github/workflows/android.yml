@@ -37,6 +37,12 @@ jobs:
           repository: manuelbotelho37-commits/depenses
           path: depenses-src
 
+      - name: Récupérer la page de Classeur (dépôt classeur)
+        uses: actions/checkout@v4
+        with:
+          repository: manuelbotelho37-commits/classeur
+          path: classeur-src
+
       - name: Ranger dans l'appli les bibliothèques venant d'internet
         working-directory: .
         run: |
