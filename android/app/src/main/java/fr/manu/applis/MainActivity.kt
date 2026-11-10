@@ -173,6 +173,13 @@ class MainActivity : AppCompatActivity() {
      * exactement ses données rangées dans l'appli : rien n'est déplacé.
      */
     private fun local(url: Uri): WebResourceResponse? {
+        // Bibliothèques venant de cdnjs (ex. Excel dans Vente) : copie rangée dans l'appli si elle existe.
+        if (url.host == "cdnjs.cloudflare.com") {
+            return try {
+                val p = (url.path ?: "").trimStart('/')
+                WebResourceResponse(mime(p), "utf-8", assets.open("www/cdn/$p")).apply { noCache() }
+            } catch (e: Exception) { null }
+        }
         if (url.host != startUri.host) return null
         val base = startUri.path ?: "/"
         val path = url.path ?: return null
@@ -223,7 +230,21 @@ class MainActivity : AppCompatActivity() {
           const wasEmpty = localStorage.length === 0;
           let t = null;
           const dump = () => { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); } return o; };
-          const send = () => { if (wasEmpty) return; clearTimeout(t); t = setTimeout(() => { try { AndroidBackup.changed(JSON.stringify(dump())); } catch (e) {} }, 1500); };
+          // Si l'appli sait faire sa propre sauvegarde complète (ex. Vente, avec les factures), on prend celle-là.
+          const go = async () => {
+            try {
+              if (typeof buildBackupFile === 'function') { const f = await buildBackupFile(); AndroidBackup.changedPage(await f.text()); }
+              else AndroidBackup.changed(JSON.stringify(dump()));
+            } catch (e) {}
+          };
+          const send = () => { if (wasEmpty) return; clearTimeout(t); t = setTimeout(go, 1500); };
+          document.addEventListener('visibilitychange', () => { if (document.hidden && !wasEmpty) { clearTimeout(t); go(); } });
+          window.__androidRestore = (txt) => {
+            const o = JSON.parse(txt);
+            if (o && o.donnees) { localStorage.clear(); for (const k in o.donnees) localStorage.setItem(k, o.donnees[k]); setTimeout(() => location.reload(), 300); return 'ok'; }
+            if (o && Array.isArray(o.clients) && typeof confirmRestore === 'function') { __pendingRestore = o; confirmRestore(); return 'ok'; }
+            return 'non';
+          };
           const S = Storage.prototype, set = S.setItem, rem = S.removeItem, clr = S.clear;
           S.setItem = function(){ const r = set.apply(this, arguments); if (this === localStorage) send(); return r; };
           S.removeItem = function(){ const r = rem.apply(this, arguments); if (this === localStorage) send(); return r; };
@@ -237,20 +258,24 @@ class MainActivity : AppCompatActivity() {
     private val pickBackup = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@registerForActivityResult
         val data = try {
-            contentResolver.openInputStream(uri)?.use { AutoBackup.parse(it.readBytes().toString(Charsets.UTF_8)) }
+            contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }?.takeIf { AutoBackup.looksValid(it) }
         } catch (e: Exception) { null }
         if (data == null) {
             Toast.makeText(this, "Ce fichier n'est pas une sauvegarde de ${BuildConfig.APK_NAME}", Toast.LENGTH_LONG).show()
             return@registerForActivityResult
         }
-        val js = "(function(d){localStorage.clear();for(const k in d)localStorage.setItem(k,d[k]);location.reload();})(" + data.toString() + ");"
-        web.evaluateJavascript(js, null)
-        Toast.makeText(this, "Sauvegarde récupérée", Toast.LENGTH_LONG).show()
+        web.evaluateJavascript("window.__androidRestore(" + JSONObject.quote(data) + ")") { res ->
+            val ok = res?.contains("ok") == true
+            Toast.makeText(this, if (ok) "Sauvegarde récupérée" else "Ce fichier n'est pas une sauvegarde de ${BuildConfig.APK_NAME}", Toast.LENGTH_LONG).show()
+        }
     }
 
     inner class Backup {
         @JavascriptInterface
         fun changed(json: String) = AutoBackup.onChange(this@MainActivity, json)
+
+        @JavascriptInterface
+        fun changedPage(text: String) = AutoBackup.onChangePage(this@MainActivity, text)
 
         @JavascriptInterface
         fun empty() {

@@ -37,31 +37,41 @@ object AutoBackup {
         val ctx = context.applicationContext
         val data = try { JSONObject(storageJson) } catch (e: Exception) { return }
         if (data.length() == 0) return // jamais écraser une sauvegarde avec du vide
+        val bytes = JSONObject()
+            .put("appli", app)
+            .put("date", SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.FRANCE).format(Date()))
+            .put("donnees", data)
+            .toString(1).toByteArray(Charsets.UTF_8)
+        save(ctx, bytes)
+    }
+
+    /** Sauvegarde complète fabriquée par la page elle-même (son propre format, avec ses fichiers). */
+    @Synchronized
+    fun onChangePage(context: Context, text: String) {
+        if (!looksValid(text)) return
+        save(context.applicationContext, text.toByteArray(Charsets.UTF_8))
+    }
+
+    /** Vrai si le texte est une sauvegarde non vide (format de l'appli ou format de la page). */
+    fun looksValid(text: String): Boolean = try {
+        val o = JSONObject(text)
+        (o.optJSONObject("donnees")?.length() ?: 0) > 0 ||
+            (o.optJSONArray("clients")?.length() ?: 0) > 0 ||
+            o.optString("notes", "").isNotBlank()
+    } catch (e: Exception) {
+        false
+    }
+
+    private fun save(ctx: Context, bytes: ByteArray) {
         pending?.cancel(false)
         pending = executor.schedule(Runnable {
             try {
-                val bytes = JSONObject()
-                    .put("appli", app)
-                    .put("date", SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.FRANCE).format(Date()))
-                    .put("donnees", data)
-                    .toString(1).toByteArray(Charsets.UTF_8)
                 File(ctx.filesDir, "derniere-sauvegarde.json").writeBytes(bytes)
                 write(ctx, latest, bytes, false)
                 val day = SimpleDateFormat("yyyy-MM-dd", Locale.FRANCE).format(Date())
                 write(ctx, "$prefix$day.json", bytes, true)
-                ctx.getSharedPreferences("sauvegardes", Context.MODE_PRIVATE).edit()
-                    .putLong("derniere", System.currentTimeMillis()).apply()
             } catch (e: Exception) { }
-        }, 2, TimeUnit.SECONDS)
-    }
-
-    /** Lit un fichier de sauvegarde choisi par l'utilisateur ; renvoie les données, ou null. */
-    fun parse(text: String): JSONObject? = try {
-        val o = JSONObject(text)
-        val d = o.optJSONObject("donnees")
-        if (d != null && d.length() > 0) d else null
-    } catch (e: Exception) {
-        null
+        }, 1, TimeUnit.SECONDS)
     }
 
     private fun write(context: Context, name: String, bytes: ByteArray, prune: Boolean) {

@@ -42,6 +42,7 @@ android {
             applicationId "fr.manu.vente"
             resValue "string", "app_name", "Vente"
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/vente/"'
+            buildConfigField "boolean", "BUNDLED", 'true'
         }
         classeur {
             dimension "appli"
@@ -79,6 +80,7 @@ android {
     // Applis autonomes : leur page (dossier du dépôt) est copiée dans l'appli au moment du build.
     sourceSets {
         courses { assets.srcDirs = ["$buildDir/www-courses"] }
+        vente { assets.srcDirs = ["$buildDir/www-vente"] }
     }
 
     buildFeatures {
@@ -115,4 +117,9 @@ tasks.register('copyWwwCourses', Copy) {
     from(rootProject.file('../courses')) { exclude 'sw.js' }
     into "$buildDir/www-courses/www"
 }
-preBuild.dependsOn 'copyWwwCourses'
+// Vente vit dans son propre dépôt : le build le récupère dans ../vente-src (voir android.yml).
+tasks.register('copyWwwVente', Copy) {
+    from(rootProject.file('../vente-src')) { exclude 'sw.js', '.git', '.git/**', '.github/**', 'index-1.html', 'icon-*-1.png' }
+    into "$buildDir/www-vente/www"
+}
+preBuild.dependsOn 'copyWwwCourses', 'copyWwwVente'
