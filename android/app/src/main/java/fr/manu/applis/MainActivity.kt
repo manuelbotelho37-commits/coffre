@@ -273,6 +273,7 @@ class MainActivity : AppCompatActivity() {
             if (o && o.donnees) { localStorage.clear(); for (const k in o.donnees) localStorage.setItem(k, o.donnees[k]); setTimeout(() => location.reload(), 300); return 'ok'; }
             if (o && Array.isArray(o.clients) && typeof confirmRestore === 'function') { __pendingRestore = o; confirmRestore(); return 'ok'; }
             if (o && o.app === 'depenses' && typeof backupLoad === 'function') { backupLoad({ files: [new File([txt], 'sauvegarde.json')], value: '' }); return 'ok'; }
+            if (o && Array.isArray(o.depenses) && typeof importBackup === 'function') { importBackup(o); return 'ok'; }
             return 'non';
           };
           const S = Storage.prototype, set = S.setItem, rem = S.removeItem, clr = S.clear;
