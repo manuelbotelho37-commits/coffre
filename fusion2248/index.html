@@ -164,7 +164,9 @@ body{background:radial-gradient(130% 75% at 50% -12%,#2a3786 0%,#111a4f 42%,#070
     <li>Glisse le doigt pour relier des blocs identiques, dans les 8 directions.</li>
     <li>Après les deux premiers, tu peux continuer sur le même nombre ou sur le double.</li>
     <li>Les blocs fusionnent : plus la chaîne est longue, plus le nouveau bloc est gros.</li>
-    <li>Atteins l'objectif pour passer au niveau suivant et gagner des diamants.</li>
+    <li>Le nouveau bloc vaut la somme de la chaîne, arrondie au bloc supérieur : 2+2+2 = 6 donne 8.</li>
+    <li>Chaque nouveau plus gros bloc te fait monter d'un niveau.</li>
+    <li>Atteins l'objectif pour passer au niveau suivant et gagner des diamants. Le petit bloc à gauche de la barre disparaîtra alors du plateau.</li>
     <li>Tes diamants servent aux outils : annuler, échanger, marteau, mélanger.</li>
   </ul>
   <button class="btn pri" data-a="close">Compris</button>
@@ -205,11 +207,12 @@ let S,G,cs=60,cw=60,ch=60,gap=6,nid=1,busy=false,drag=false,chain=[],mode=null,s
 const tiles=new Map();
 
 const col=e=>PAL[(e-1)%PAL.length];
-function lab(e){const k=Math.floor(e/10),p=2**(e%10);let s;if(k<SUF.length)s=SUF[k];else{const i=k-SUF.length;s=String.fromCharCode(97+Math.floor(i/26)%26)+String.fromCharCode(97+i%26)}return p+s}
+function lab(e){const v=2**e;if(v<1000)return String(v);let k=Math.floor(Math.log10(v)/3);let m=Math.floor(v/10**(3*k));if(m>=1000){m=Math.floor(m/1000);k++}if(m<1){m=Math.floor(v/10**(3*(k-1)));k--}
+  let s;if(k<SUF.length)s=SUF[k];else{const i=k-SUF.length+1;s=i<26?String.fromCharCode(97+i):String.fromCharCode(96+Math.floor(i/26))+String.fromCharCode(97+i%26)}return m+s}
 const fmt=n=>n<1e15?Math.floor(n).toLocaleString('fr-FR'):n.toExponential(2).replace('e+',' e');
-const level=()=>Math.floor((S.mx-5)/3)+1;
+const level=()=>Math.max(1,S.mx-7);
 function spawnE(){const w=[32,26,19,12,7,4];let x=Math.random()*100;for(let i=0;i<w.length;i++){x-=w[i];if(x<0)return S.base+i}return S.base}
-function resExp(ex){const m=Math.min(...ex);const s=ex.reduce((a,e)=>a+2**(e-m),0);let k=0;while(2**(k+1)<=s)k++;return m+k}
+function resExp(ex){const m=Math.min(...ex);const s=ex.reduce((a,e)=>a+2**(e-m),0);let k=0;while(2**k<s)k++;return m+k}
 const sumV=ex=>ex.reduce((a,e)=>a+2**e,0);
 function mini(e,k){const[bg,ink]=col(e),s=lab(e);return `<div class="mini${k?' k':''}" style="background:${bg};color:${ink};font-size:${Math.round(44*FS[Math.min(s.length,5)])}px">${s}</div>`}
 
@@ -259,7 +262,7 @@ function kings(){for(let r=0;r<R;r++)for(let c=0;c<C;c++){const t=G[r][c];if(t)t
 function hud(){
   $('#gm').textContent=S.gems.toLocaleString('fr-FR');$('#lvn').textContent='Niveau '+level();
   $('#bs').textContent='Record '+fmt(S.best);
-  let g=8;while(g<=S.mx)g+=3;const p=g-3,pct=Math.max(0,Math.min(1,(S.mx-p)/3));
+  const g=S.mx+1,p=S.base,pct=.5;
   $('#goal').innerHTML=`${mini(Math.max(1,p))}<div class="track" style="--p:${pct*100}%;--f:${pct}"><i style="width:${pct*100}%"></i><div class="mk" style="left:calc(22px + (100% - 44px) * ${pct})">${mini(S.mx,1)}</div></div>${mini(g)}<div class="lbl">Objectif</div>`;
   document.querySelectorAll('.tb[data-k]').forEach(b=>{const k=b.dataset.k;if(!COST[k])return;b.classList.toggle('poor',S.gems<COST[k]);b.classList.toggle('on',mode===k);b.querySelector('span').innerHTML=GEM+COST[k]});
   countUp();
@@ -316,8 +319,7 @@ async function merge(ch){
   const el=tiles.get(lt.id);lt.e=ne;S.score+=sumV(ex);if(S.score>S.best)S.best=S.score;
   let bonus=ch.length>=5?ch.length-4:0;
   if(ne>S.mx){S.mx=ne;S.bestE=Math.max(S.bestE||0,ne);kings();
-    if(level()>oldLv){bonus+=50;celebrate(ne,'Objectif atteint ! Niveau '+level(),50+(ch.length>=5?ch.length-4:0))}
-    else if(ne>=8){bonus+=10;celebrate(ne,'Nouveau bloc !',10+(ch.length>=5?ch.length-4:0))}}
+    if(level()>oldLv){bonus+=25;celebrate(ne,'Niveau '+level()+' !',25+(ch.length>=5?ch.length-4:0))}}
   addGems(bonus);paint(el,ne);el.classList.remove('sel','pop');el.offsetWidth;el.classList.add('pop');
   hud();await wait(110);await gravity();await raiseBase();
   hud();save();busy=false;if(!hasMove())gameOver();
@@ -328,7 +330,7 @@ function gravity(){
   return wait(280);
 }
 async function raiseBase(){
-  const nb=Math.max(1,S.mx-9);if(nb<=S.base)return;const old=S.base;S.base=nb;
+  const nb=Math.max(1,S.mx-10);if(nb<=S.base)return;const old=S.base;S.base=nb;
   for(let r=0;r<R;r++)for(let c=0;c<C;c++){const t=G[r][c];if(t&&t.e<nb){const el=tiles.get(t.id);el.classList.add('boom');tiles.delete(t.id);G[r][c]=null;setTimeout(()=>el.remove(),300)}}
   addGems(30);toast(nb-old>1?'Les petits blocs disparaissent ! +30':`Le ${lab(old)} disparaît ! +30`);
   await wait(320);await gravity();kings();
