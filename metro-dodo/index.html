@@ -157,13 +157,12 @@ let REF=8, PER=1.5;
 // station, nom, distance en mètres (à vol d'oiseau), type, avertissement
 const H=[
 ["Saint-Mandé", "hotelF1 Paris Porte de Montreuil", 965, "Hôtel très basique · 7,2/10 (762 avis)", "Certaines chambres ont la douche et les toilettes sur le palier : choisissez une chambre avec salle de bain privée.", "Bagnolet", 55, 110, [["Hotels.com",55,110],["Expedia",55,110]], {hc:"ho572568",ex:"h13481399",adr:"290-302 rue Étienne Marcel, 93170 Bagnolet"}],
-["Bastille", "Au Royal Mad Hotel", 700, "Hôtel 2 étoiles · 6,6/10 (791 avis)", "Vérifiez que la chambre choisie a bien sa propre douche et ses toilettes.", "Paris 11e", 92, 184, [["Hotels.com",92,184],["Expedia",92,184]], {hc:"ho414053",ex:"h5265518",adr:"68 rue Sedaine, 75011 Paris"}],
-["Esplanade de La Défense", "Hôtel Princesse Isabelle", 400, "Hôtel 3 étoiles · 7,2/10 (769 avis)", "", "72 rue Jean Jaurès Puteaux", 95, 191, [["Expedia",95,191],["Hotels.com",105,211]], {hc:"ho285514",ex:"h527226",adr:"72 rue Jean-Jaurès, 92800 Puteaux"}],
-["La Défense", "ibis budget Courbevoie Paris La Défense", 650, "Hôtel 2 étoiles · 7,4/10 (777 avis)", "", "Courbevoie", 107, 213, [["Hotels.com",107,213],["Expedia",107,213]], {hc:"ho579176",ex:"h14763292",adr:"37 quai du Président Paul Doumer, 92400 Courbevoie"}]
+["Bastille", "Au Royal Mad Hotel", 700, "Hôtel 2 étoiles · 6,6/10 (791 avis)", "Vérifiez que la chambre choisie a bien sa propre douche et ses toilettes.", "Paris 11e", 92, 184, [["Hotels.com",92,184]], {hc:"ho414053",ex:"h5265518",adr:"68 rue Sedaine, 75011 Paris"}],
+["Esplanade de La Défense", "Hôtel Princesse Isabelle", 400, "Hôtel 3 étoiles · 7,2/10 (769 avis)", "", "72 rue Jean Jaurès Puteaux", 105, 211, [["Hotels.com",105,211]], {hc:"ho285514",ex:"h527226",adr:"72 rue Jean-Jaurès, 92800 Puteaux"}]
 ];
 const H9=[
 ["République", "Hôtel Aix Europe", 500, "Hôtel 2 étoiles · 7,2/10 (299 avis)", "", "Paris 10e", 90, 180, [["Expedia",90,180],["Hotels.com",93,185]], {hc:"ho685371",ex:"h18054578",adr:"4 rue d'Aix, 75010 Paris"}],
-["Voltaire", "Au Royal Mad Hotel", 500, "Hôtel 2 étoiles · 6,6/10 (791 avis)", "Vérifiez que la chambre choisie a bien sa propre douche et ses toilettes.", "Paris 11e", 92, 184, [["Hotels.com",92,184],["Expedia",92,184]], {hc:"ho414053",ex:"h5265518",adr:"68 rue Sedaine, 75011 Paris"}],
+["Voltaire", "Au Royal Mad Hotel", 500, "Hôtel 2 étoiles · 6,6/10 (791 avis)", "Vérifiez que la chambre choisie a bien sa propre douche et ses toilettes.", "Paris 11e", 92, 184, [["Hotels.com",92,184]], {hc:"ho414053",ex:"h5265518",adr:"68 rue Sedaine, 75011 Paris"}],
 ["Strasbourg – Saint-Denis", "Hôtel Du Brabant", 750, "Hôtel 2 étoiles · 5,8/10 (788 avis)", "", "Paris 10e", 110, 220, [["Expedia",110,220],["Hotels.com",114,227]], {hc:"ho287326",ex:"h2520450",adr:"18 rue des Petits-Hôtels, 75010 Paris"}]
 ];
 const L9=["Pont de Sèvres","Billancourt","Marcel Sembat","Porte de Saint-Cloud","Exelmans","Michel-Ange – Molitor","Michel-Ange – Auteuil","Jasmin","Ranelagh","La Muette","Rue de la Pompe","Trocadéro","Iéna","Alma – Marceau","Franklin D. Roosevelt","Saint-Philippe du Roule","Miromesnil","Saint-Augustin","Havre – Caumartin","Chaussée d'Antin – La Fayette","Richelieu – Drouot","Grands Boulevards","Bonne Nouvelle","Strasbourg – Saint-Denis","République","Oberkampf","Saint-Ambroise","Voltaire","Charonne","Rue des Boulets"];
@@ -173,7 +172,7 @@ LINE=LN[CUR].st;REF=LN[CUR].ref;PER=LN[CUR].per;
 const enc=encodeURIComponent;
 const walkMin=m=>Math.max(1,Math.round(m*1.3/80));
 const fmtDist=m=>m<1000?Math.round(m/10)*10+" m":(m/1000).toFixed(1).replace(".",",")+" km";
-const D={cin:"2026-11-26",cout:"2026-11-28",pmax:90};
+const D={cin:"2026-11-26",cout:"2026-11-28",pmax:100};
 try{Object.assign(D,JSON.parse(localStorage.getItem("fdr_dates")||"{}"))}catch(e){}
 const dq=()=>"&group_adults=1&no_rooms=1&group_children=0"+(D.cin&&D.cout?"&checkin="+D.cin+"&checkout="+D.cout:"");
 const frDate=s=>{const[y,m,d]=s.split("-");return d+"/"+m+"/"+y};
