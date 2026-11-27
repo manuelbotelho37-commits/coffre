@@ -121,6 +121,35 @@ body{background:radial-gradient(130% 75% at 50% -12%,#2a3786 0%,#111a4f 42%,#070
 .hrow b{text-align:right}
 .hrow .mini{width:32px;height:32px;border-radius:8px}
 @media (prefers-reduced-motion:reduce){.sky{animation:none}.t{transition-duration:.01s}}
+
+/* ============ THÈME OR (couleurs Maison : or sur fond sombre) ============ */
+:root{--bg:#0c0c0e;--ink:#f3ead6;--mut:#a69c86;--pan:#17171a;--slot:#1c1a16;--gold:#e2c275}
+body{background:radial-gradient(130% 75% at 50% -12%,#2a2416 0%,#141210 45%,#0c0c0e 100%) fixed;color:var(--ink)}
+.sky{opacity:.35;filter:sepia(1) saturate(3) hue-rotate(-10deg)}
+#sc{color:#e2c275;text-shadow:0 2px 10px #d4a94e33}
+#bs{color:var(--mut)}
+.pill{background:#17171a;border:1px solid #4a4130;color:#f3ead6}
+.board{background:linear-gradient(#1b1915,#111113);box-shadow:inset 0 1px 0 #e2c27522,0 24px 60px #000c,0 0 0 1px #d4a94e55}
+.slot{box-shadow:inset 0 2px 4px #000a,inset 0 0 0 1px #d4a94e14}
+.f{box-shadow:inset 0 -5px 0 #0000003a,inset 0 3px 0 #ffffff40,inset 0 0 0 1.5px #f0d78c55,0 4px 10px #000a}
+.f b{font-weight:800}
+.track{background:#ffffff14}
+.track i{background:linear-gradient(90deg,#b8862e,#f0d78c)}
+.mini{box-shadow:inset 0 -3px 0 #0003,inset 0 2px 0 #ffffff40,inset 0 0 0 1px #f0d78c55,0 3px 8px #000a}
+.prev{background:#141210;border-color:#4a4130;color:#f3ead6}
+.tb{background:#17171a;border:1px solid #4a4130;color:#e2c275}
+.tb span{color:var(--mut)}
+.tb.on{background:#d4a94e2e;border-color:#e2c275;box-shadow:0 0 16px #e2c27566}
+#toast{background:#17171af2;border:1px solid #d4a94e;color:#f3ead6}
+/* fenêtres */
+.ov{background:#0a0a0ccc}
+.card{background:linear-gradient(#1d1b17,#141416);border:1px solid #4a4130}
+.card h2{color:#e2c275}
+.card .big{color:#f3ead6}
+.btn{background:#ffffff10;color:#f3ead6;border:1px solid #33302a}
+.btn.pri{background:linear-gradient(160deg,#f0d78c,#d4a94e 55%,#b8862e);color:#1a1508;border:1px solid #f3e2a6}
+.rules{color:#e8dfcb}
+.stat{border-bottom:1px solid #33302a}
 </style>
 </head>
 <body>
@@ -194,7 +223,8 @@ body{background:radial-gradient(130% 75% at 50% -12%,#2a3786 0%,#111a4f 42%,#070
 <script>
 {
 const R=8,C=5,KEY='fusion2248';
-const PAL=[['#f4a097','#4a1f1c'],['#f7c94f','#4a3200'],['#a5d86b','#203a0c'],['#6fd6b8','#0c3a2e'],['#58b4f0','#0b2a44'],['#8f7cf3','#fff'],['#ee6d98','#fff'],['#f48a45','#fff'],['#2fb7c7','#fff'],['#e84b55','#fff'],['#4c6cf0','#fff'],['#2f8a7c','#fff'],['#b45be0','#fff'],['#cf9416','#fff']];
+/* couleurs Maison : or sur fond sombre (champagne, ors, bronze, cuivre, pierres précieuses, onyx) */
+const PAL=[['#f3e6c4','#3a2a08'],['#e0b85a','#2a1a00'],['#c4693b','#fff6e6'],['#1f7a5c','#f3dc9a'],['#e3ab9a','#3b1712'],['#2a4fa8','#f3dc9a'],['#fffaf0','#8a6a1c'],['#8e2a3a','#f3dc9a'],['#49b39a','#0f2e26'],['#7a45b8','#f6e3a8'],['#a8772a','#fff3d0'],['#c23a46','#fff4e0'],['#2a2620','#e2c275'],['#2f8f9d','#fffaf0']];
 const SUF=['','K','M','B','T'];
 const FS=[0,.5,.44,.36,.29,.24];
 const COST={undo:50,swap:100,ham:100,mix:150};
