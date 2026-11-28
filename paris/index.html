@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Paris</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="icon" href="icon-192.png">
+<style>:root{--bg:#0c0c0e;--s1:#17171a;--line:#33302a;--gold:#d4a94e;--gold2:#e2c275;--txt:#f3ead6;--dim:#a69c86;--ink:#111113;--mdgold:linear-gradient(135deg,#f7e3a1 0%,#d4a94e 45%,#a87b2c 72%,#ecd08a 100%)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-variant-numeric:lining-nums}
+html{font-size:106.25%}
+html,body{margin:0;background:radial-gradient(120% 60% at 30% 0%,#26241f 0%,#0c0c0e 60%) fixed,#0c0c0e;color:var(--txt);font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
+body{min-height:100vh}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 40px}
+header{position:sticky;top:0;z-index:5;padding:20px 4px 14px;text-align:center;background:linear-gradient(#0c0c0ef5 85%,#0c0c0e00)}
+.or{background:var(--mdgold);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1{margin:0;font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:2.6rem;line-height:1.1;letter-spacing:.03em}
+header .line{width:140px;height:1px;margin:10px auto 8px;background:linear-gradient(90deg,transparent,#d4a94e,transparent)}
+.sub{color:var(--dim);font-size:1rem}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:10px 14px;text-align:left}
+.stat small{display:block;color:var(--dim);font-size:.85rem}
+.stat b{font-size:1.5rem;font-weight:700}
+.bar{height:6px;border-radius:9px;background:#ffffff10;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--mdgold);transition:width .3s}
+.rows{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:1px solid var(--line);background:var(--s1);color:var(--txt);border-radius:14px;padding:13px 16px;font:inherit;cursor:pointer;transition:transform .1s}
+.row:active{transform:scale(.98)}
+.num{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1.1rem;border:1.5px solid var(--gold);color:var(--gold2)}
+.mid{flex:1;min-width:0}
+.mid .m{font-size:.95rem;color:var(--dim);white-space:nowrap}
+.mid .g{font-size:.88rem;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tot{font-size:1.3rem;font-weight:700;color:var(--gold2);white-space:nowrap}
+.row.on{background:var(--mdgold);border-color:transparent;box-shadow:0 4px 18px #d4a94e40}
+.row.on .num{background:var(--ink);border-color:var(--ink);color:var(--gold2)}
+.row.on .mid .m,.row.on .mid .g,.row.on .tot{color:var(--ink)}
+.note{color:var(--dim);font-size:.85rem;text-align:center;margin-top:18px}
+.ttlbtn{background:none;border:0;padding:4px 10px;cursor:pointer;font:inherit;display:inline-flex;align-items:baseline;gap:10px}
+.edit{font-family:"Source Sans 3",system-ui,sans-serif;font-size:.8rem;color:var(--dim);margin-top:6px}
+.cbox{display:none;align-items:center;justify-content:center;gap:10px;margin-top:4px}
+.cbox.on{display:flex}
+.cbox label{font-family:"Cormorant Garamond",Georgia,serif;font-size:2.2rem;font-weight:700}
+.cbox input{width:130px;font:700 2rem "Source Sans 3",system-ui,sans-serif;text-align:center;background:#1f1e1c;color:#f3ead6;border:1.5px solid var(--gold);border-radius:12px;padding:6px 8px;outline:none;box-shadow:0 0 14px #d4a94e33}
+.cbox button{border:0;border-radius:12px;padding:14px 18px;font:700 1rem "Source Sans 3",system-ui,sans-serif;background:var(--mdgold);color:var(--ink);cursor:pointer}
+.cerr{color:#c4635a;font-size:.85rem;min-height:1.1em;margin-top:4px}
+.row{position:relative}
+.pen{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#0c0c0e88;color:var(--gold2);font-size:1.05rem;cursor:pointer;margin-left:-4px}
+.row.on .pen{background:#11111322;border-color:#11111344;color:var(--ink)}
+.row.ed .g{color:var(--gold2)}
+.row.on.ed .g{color:var(--ink);font-weight:600}
+.sheet{position:fixed;inset:0;z-index:20;background:#000a;display:none;align-items:flex-end;justify-content:center}
+.sheet.on{display:flex}
+.sbox{width:100%;max-width:520px;background:#17171a;border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom))}
+.sbox h2{margin:0 0 12px;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.9rem;text-align:center}
+.sbox label{display:block;color:var(--dim);font-size:.85rem;margin:10px 0 5px}
+.sbox input{width:100%;font:700 1.4rem "Source Sans 3",system-ui,sans-serif;background:#1f1e1c;color:var(--txt);border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;outline:none}
+.sbox input:focus{border-color:var(--gold)}
+.sp{color:var(--gold2);font-weight:600;text-align:center;margin:14px 0 4px;min-height:1.3em}
+.sbtns{display:flex;gap:10px;margin-top:12px}
+.sbtns button{flex:1;border-radius:12px;padding:14px;font:600 1rem "Source Sans 3",system-ui,sans-serif;border:1px solid var(--line);background:#1f1e1c;color:var(--txt);cursor:pointer}
+.sbtns .gold{background:var(--mdgold);color:var(--ink);border-color:transparent;font-weight:700}
+</style>
+</head>
+<body>
+<script type="application/json" id="state">{"cote":1.25,"done":{"1.20":[1],"1.25":{"d":[1,2,3],"o":{"3":{"m":46.47}}}}}</script>
+<script>
+(function(){
+const APP=document.currentScript.textContent;
+const SHELL="<div class=\"wrap\">\n<header>\n  <button class=\"ttlbtn\" id=\"ttlbtn\"><h1 class=\"or\" id=\"ttl\">Cote 1,20</h1></button>\n  <div class=\"cbox\" id=\"cbox\"><label class=\"or\" for=\"ci\">Cote</label><input id=\"ci\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"cok\">OK</button></div>\n  <div class=\"cerr\" id=\"cerr\"></div>\n  <div class=\"edit\" id=\"edit\">Touche la cote pour la changer</div>\n  <div class=\"line\"></div>\n  <div class=\"sub\" id=\"sub\"></div>\n  <div class=\"stats\">\n    <div class=\"stat\"><small>Paris gagnés</small><b class=\"or\" id=\"cnt\"></b></div>\n    <div class=\"stat\"><small>Total actuel</small><b class=\"or\" id=\"cur\"></b></div>\n  </div>\n  <div class=\"bar\"><i id=\"prog\"></i></div>\n</header>\n<div class=\"rows\" id=\"rows\"></div>\n<div class=\"note\" id=\"note\">Touche un pari pour le valider. Touche-le encore pour l'enlever. Le crayon ✎ sert à changer la mise ou la cote d'un pari.</div>\n</div>\n<div class=\"sheet\" id=\"sheet\"><div class=\"sbox\"><h2 class=\"or\" id=\"sh\">Pari</h2><label for=\"sm\">Mise (€)</label><input id=\"sm\" inputmode=\"decimal\" autocomplete=\"off\"><label for=\"sc\">Cote</label><input id=\"sc\" inputmode=\"decimal\" autocomplete=\"off\"><div class=\"sp\" id=\"sp\"></div><div class=\"cerr\" id=\"se\"></div><div class=\"sbtns\"><button id=\"sno\">Annuler</button><button class=\"gold\" id=\"sok\">OK</button></div><div class=\"sbtns\"><button id=\"sreset\">Remettre comme avant</button></div></div></div>\n";
+document.body.insertAdjacentHTML('afterbegin',SHELL);
+const CSS=document.querySelector('style').textContent;
+const DEP=30,OBJ=10000;
+const key=c=>c.toFixed(2);
+let cote=1.2,doneBy={};
+try{const st=JSON.parse(document.getElementById('state').textContent);
+  if(Array.isArray(st.done))doneBy['1.20']=st.done;else if(st.done)doneBy=st.done;
+  if(st.cote)cote=st.cote}catch(e){}
+const LSK='paris_v1';try{const ls=JSON.parse(localStorage.getItem(LSK)||'null');if(ls&&ls.done){doneBy=ls.done;if(ls.cote)cote=ls.cote}}catch(e){}
+const eur=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const fc=c=>c.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const box=document.getElementById('rows');
+let N=0,done=new Set(),rows=[];
+function slot(){let v=doneBy[key(cote)];if(Array.isArray(v))v={d:v,o:{}};if(!v)v={d:[],o:{}};if(!v.o)v.o={};doneBy[key(cote)]=v;return v}
+let plan=[];
+function build(){
+  const sl=slot();plan=[];let prev=DEP;
+  for(let n=1;n<=300;n++){const o=sl.o[n]||{};const mise=o.m!=null?o.m:prev,c=o.c!=null?o.c:cote,tot=mise*c;
+    plan.push({n,mise,c,gain:tot-mise,tot,edited:o.m!=null||o.c!=null});prev=tot;if(tot>=OBJ||c<=1)break}
+  N=plan.length;done=new Set(sl.d.filter(n=>n<=N));
+  box.textContent='';rows=[];
+  plan.forEach(p=>{
+    const b=document.createElement('div');b.className='row'+(p.edited?' ed':'');b.setAttribute('role','button');
+    b.innerHTML='<span class="num">'+p.n+'</span><span class="mid"><div class="m">Mise '+eur(p.mise)+'</div><div class="g">Cote '+fc(p.c)+' · gain +'+eur(p.gain)+'</div></span><span class="tot">'+eur(p.tot)+'</span><button class="pen" aria-label="Modifier le pari '+p.n+'">✎</button>';
+    b.addEventListener('click',()=>{done.has(p.n)?done.delete(p.n):done.add(p.n);slot().d=[...done].sort((x,y)=>x-y);paint();save()});
+    b.querySelector('.pen').addEventListener('click',e=>{e.stopPropagation();openRow(p)});
+    box.appendChild(b);rows.push(b);
+  });
+  document.getElementById('ttl').textContent='Cote '+fc(cote);
+  const last=plan[N-1];
+  document.getElementById('sub').textContent=DEP+' € → '+eur(last?last.tot:DEP)+' en '+N+' paris';
+  paint();
+}
+function paint(){
+  rows.forEach((b,i)=>b.classList.toggle('on',done.has(i+1)));
+  const last=done.size?Math.max(...done):0;
+  document.getElementById('cnt').textContent=done.size+' / '+N;
+  document.getElementById('cur').textContent=eur(last?plan[last-1].tot:DEP);
+  document.getElementById('prog').style.width=(done.size/N*100)+'%';
+}
+const sh=document.getElementById('sheet'),sm=document.getElementById('sm'),sc=document.getElementById('sc'),sp=document.getElementById('sp'),se=document.getElementById('se');let cur=null;
+const num=v=>parseFloat(String(v).replace(/\s/g,'').replace('€','').replace(',','.'));
+function prev(){const m=num(sm.value),c=num(sc.value);sp.textContent=(m>0&&c>1)?'Total si gagné : '+eur(m*c)+'  (gain +'+eur(m*(c-1))+')':'';}
+function openRow(p){cur=p;document.getElementById('sh').textContent='Pari n°'+p.n;sm.value=fc(p.mise);sc.value=fc(p.c);se.textContent='';prev();sh.classList.add('on');}
+function closeRow(){sh.classList.remove('on');cur=null}
+sm.addEventListener('input',prev);sc.addEventListener('input',prev);
+document.getElementById('sok').addEventListener('click',()=>{const m=num(sm.value),c=num(sc.value);
+  if(!(m>0)){se.textContent='Mets une mise, par exemple 30';return}
+  if(!(c>1)){se.textContent='Mets une cote plus grande que 1, par exemple 1,54';return}
+  const sl=slot(),o={};if(Math.abs(m-cur.mise)>0.004||cur.edited&&sl.o[cur.n]&&sl.o[cur.n].m!=null)o.m=Math.round(m*100)/100;
+  if(Math.abs(c-cur.c)>0.0001||cur.edited&&sl.o[cur.n]&&sl.o[cur.n].c!=null)o.c=Math.round(c*100)/100;
+  if(o.m!=null||o.c!=null)sl.o[cur.n]=o;closeRow();build();save()});
+document.getElementById('sreset').addEventListener('click',()=>{const sl=slot();delete sl.o[cur.n];closeRow();build();save()});
+document.getElementById('sno').addEventListener('click',closeRow);
+sh.addEventListener('click',e=>{if(e.target===sh)closeRow()});
+function setCote(c){if(c===cote)return;cote=c;build();save()}
+build();
+const tb=document.getElementById('ttlbtn'),cb=document.getElementById('cbox'),ci=document.getElementById('ci'),ce=document.getElementById('cerr'),ed=document.getElementById('edit');
+function openEdit(){tb.style.display='none';ed.style.display='none';cb.classList.add('on');ci.value=fc(cote);ce.textContent='';ci.focus();ci.select()}
+function closeEdit(){cb.classList.remove('on');tb.style.display='';ed.style.display='';ce.textContent=''}
+function valid(){const v=parseFloat(String(ci.value).replace(',','.').replace(/\s/g,''));
+  if(!(v>1&&v<=50)){ce.textContent='Mets une cote plus grande que 1, par exemple 1,25';return}
+  const c=Math.round(v*100)/100;if(c<=1){ce.textContent='Mets une cote plus grande que 1, par exemple 1,25';return}
+  closeEdit();setCote(c)}
+tb.addEventListener('click',openEdit);
+document.getElementById('cok').addEventListener('click',valid);
+ci.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();valid()}if(e.key==='Escape')closeEdit()});
+let art=null,timer=null;
+if(window.claude&&window.claude.use){window.claude.use('artifact').then(a=>{art=a}).catch(()=>{})}
+function page(){
+  const st=JSON.stringify({cote,done:doneBy}).replace(/</g,'\\u003c');
+  return '<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<title>Paris cote 1,20</title>\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap\">\n<style>'+CSS+'</style>\n</head>\n<body>\n<script type="application/json" id="state">'+st+'</scr'+'ipt>\n<scr'+'ipt>'+APP+'</scr'+'ipt>\n</body>\n</html>\n';
+}
+window.__page=page;
+function save(){
+  try{localStorage.setItem(LSK,JSON.stringify({cote,done:doneBy}))}catch(e){}
+  clearTimeout(timer);
+  timer=setTimeout(()=>{if(art)art.publish(page()).catch(()=>{})},900);
+}
+})();
+</script>
+</body>
+</html>

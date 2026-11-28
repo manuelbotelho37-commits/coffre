@@ -94,12 +94,21 @@ android {
             buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/fusion2248/"'
             buildConfigField "boolean", "BUNDLED", 'true'
         }
+        paris {
+            dimension "appli"
+            buildConfigField "String", "APK_NAME", '"Paris"'
+            applicationId "fr.manu.paris"
+            resValue "string", "app_name", "Paris"
+            buildConfigField "String", "START_URL", '"https://manuelbotelho37-commits.github.io/coffre/paris/"'
+            buildConfigField "boolean", "BUNDLED", 'true'
+        }
     }
 
     // Applis autonomes : leur page (dossier du dépôt) est copiée dans l'appli au moment du build.
     sourceSets {
         courses { assets.srcDirs = ["$buildDir/www-courses"] }
         fusion { assets.srcDirs = ["$buildDir/www-fusion"] }
+        paris { assets.srcDirs = ["$buildDir/www-paris"] }
         vente { assets.srcDirs = ["$buildDir/www-vente"] }
         coffre { assets.srcDirs = ["$buildDir/www-coffre"] }
         depenses { assets.srcDirs = ["$buildDir/www-depenses"] }
@@ -146,6 +155,11 @@ tasks.register('copyWwwFusion', Copy) {
     from(rootProject.file('../fusion2248')) { exclude 'sw.js' }
     into "$buildDir/www-fusion/www"
 }
+// Copie l'appli Paris (dossier paris/ du dépôt) dans l'appli, sous assets/www/.
+tasks.register('copyWwwParis', Copy) {
+    from(rootProject.file('../paris')) { exclude 'sw.js' }
+    into "$buildDir/www-paris/www"
+}
 // Bibliothèques venant d'internet (cdnjs), téléchargées par android.yml dans ../cdn-libs.
 def cdnLibs = rootProject.file('../cdn-libs')
 
@@ -179,4 +193,4 @@ tasks.register('copyWwwQuotidien', Copy) {
     from(rootProject.file('../quotidien-src/app'))
     into "$buildDir/www-quotidien/www"
 }
-preBuild.dependsOn 'copyWwwCourses', 'copyWwwFusion', 'copyWwwVente', 'copyWwwCoffre', 'copyWwwDepenses', 'copyWwwClasseur', 'copyWwwQuotidien'
+preBuild.dependsOn 'copyWwwCourses', 'copyWwwFusion', 'copyWwwParis', 'copyWwwVente', 'copyWwwCoffre', 'copyWwwDepenses', 'copyWwwClasseur', 'copyWwwQuotidien'
