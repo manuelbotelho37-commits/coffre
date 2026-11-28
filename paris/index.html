@@ -59,6 +59,10 @@ header .line{width:140px;height:1px;margin:10px auto 8px;background:linear-gradi
 .sbtns{display:flex;gap:10px;margin-top:12px}
 .sbtns button{flex:1;border-radius:12px;padding:14px;font:600 1rem "Source Sans 3",system-ui,sans-serif;border:1px solid var(--line);background:#1f1e1c;color:var(--txt);cursor:pointer}
 .sbtns .gold{background:var(--mdgold);color:var(--ink);border-color:transparent;font-weight:700}
+.depbtn{display:inline-flex;align-items:center;gap:12px;margin:2px auto 8px;padding:10px 18px;border-radius:14px;border:1px solid var(--line);background:var(--s1);color:var(--dim);font:600 1rem "Source Sans 3",system-ui,sans-serif;cursor:pointer}
+.depbtn b{font-size:1.5rem;font-weight:700}
+.depbtn i{font-style:normal;color:var(--gold2)}
+.cbox .dlab{font-size:1.6rem}
 </style>
 </head>
 <body>
@@ -66,16 +70,16 @@ header .line{width:140px;height:1px;margin:10px auto 8px;background:linear-gradi
 <script>
 (function(){
 const APP=document.currentScript.textContent;
-const SHELL="<div class=\"wrap\">\n<header>\n  <button class=\"ttlbtn\" id=\"ttlbtn\"><h1 class=\"or\" id=\"ttl\">Cote 1,20</h1></button>\n  <div class=\"cbox\" id=\"cbox\"><label class=\"or\" for=\"ci\">Cote</label><input id=\"ci\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"cok\">OK</button></div>\n  <div class=\"cerr\" id=\"cerr\"></div>\n  <div class=\"edit\" id=\"edit\">Touche la cote pour la changer</div>\n  <div class=\"line\"></div>\n  <div class=\"sub\" id=\"sub\"></div>\n  <div class=\"stats\">\n    <div class=\"stat\"><small>Paris gagnés</small><b class=\"or\" id=\"cnt\"></b></div>\n    <div class=\"stat\"><small>Total actuel</small><b class=\"or\" id=\"cur\"></b></div>\n  </div>\n  <div class=\"bar\"><i id=\"prog\"></i></div>\n</header>\n<div class=\"rows\" id=\"rows\"></div>\n<div class=\"note\" id=\"note\">Touche un pari pour le valider. Touche-le encore pour l'enlever. Le crayon ✎ sert à changer la mise ou la cote d'un pari.</div>\n</div>\n<div class=\"sheet\" id=\"sheet\"><div class=\"sbox\"><h2 class=\"or\" id=\"sh\">Pari</h2><label for=\"sm\">Mise (€)</label><input id=\"sm\" inputmode=\"decimal\" autocomplete=\"off\"><label for=\"sc\">Cote</label><input id=\"sc\" inputmode=\"decimal\" autocomplete=\"off\"><div class=\"sp\" id=\"sp\"></div><div class=\"cerr\" id=\"se\"></div><div class=\"sbtns\"><button id=\"sno\">Annuler</button><button class=\"gold\" id=\"sok\">OK</button></div><div class=\"sbtns\"><button id=\"sreset\">Remettre comme avant</button></div></div></div>\n";
+const SHELL="<div class=\"wrap\">\n<header>\n  <button class=\"ttlbtn\" id=\"ttlbtn\"><h1 class=\"or\" id=\"ttl\">Cote 1,20</h1></button>\n  <div class=\"cbox\" id=\"cbox\"><label class=\"or\" for=\"ci\">Cote</label><input id=\"ci\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"cok\">OK</button></div>\n  <div class=\"cerr\" id=\"cerr\"></div>\n  <div class=\"edit\" id=\"edit\">Touche la cote ou la mise de départ pour les changer</div>\n  <div class=\"line\"></div>\n  <button class=\"depbtn\" id=\"depbtn\"><span>Mise de départ</span><b class=\"or\" id=\"depv\"></b><i>✎</i></button>\n  <div class=\"cbox\" id=\"dbox\"><label class=\"or dlab\" for=\"di\">Départ</label><input id=\"di\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"dok\">OK</button></div>\n  <div class=\"cerr\" id=\"derr\"></div>\n  <div class=\"sub\" id=\"sub\"></div>\n  <div class=\"stats\">\n    <div class=\"stat\"><small>Paris gagnés</small><b class=\"or\" id=\"cnt\"></b></div>\n    <div class=\"stat\"><small>Total actuel</small><b class=\"or\" id=\"cur\"></b></div>\n  </div>\n  <div class=\"bar\"><i id=\"prog\"></i></div>\n</header>\n<div class=\"rows\" id=\"rows\"></div>\n<div class=\"note\" id=\"note\">Touche un pari pour le valider. Touche-le encore pour l'enlever. Le crayon ✎ sert à changer la mise ou la cote d'un pari.</div>\n</div>\n<div class=\"sheet\" id=\"sheet\"><div class=\"sbox\"><h2 class=\"or\" id=\"sh\">Pari</h2><label for=\"sm\">Mise (€)</label><input id=\"sm\" inputmode=\"decimal\" autocomplete=\"off\"><label for=\"sc\">Cote</label><input id=\"sc\" inputmode=\"decimal\" autocomplete=\"off\"><div class=\"sp\" id=\"sp\"></div><div class=\"cerr\" id=\"se\"></div><div class=\"sbtns\"><button id=\"sno\">Annuler</button><button class=\"gold\" id=\"sok\">OK</button></div><div class=\"sbtns\"><button id=\"sreset\">Remettre comme avant</button></div></div></div>\n";
 document.body.insertAdjacentHTML('afterbegin',SHELL);
 const CSS=document.querySelector('style').textContent;
-const DEP=30,OBJ=10000;
+let DEP=30;const OBJ=10000;
 const key=c=>c.toFixed(2);
 let cote=1.2,doneBy={};
 try{const st=JSON.parse(document.getElementById('state').textContent);
   if(Array.isArray(st.done))doneBy['1.20']=st.done;else if(st.done)doneBy=st.done;
-  if(st.cote)cote=st.cote}catch(e){}
-const LSK='paris_v1';try{const ls=JSON.parse(localStorage.getItem(LSK)||'null');if(ls&&ls.done){doneBy=ls.done;if(ls.cote)cote=ls.cote}}catch(e){}
+  if(st.cote)cote=st.cote;if(st.dep)DEP=st.dep}catch(e){}
+const LSK='paris_v1';try{const ls=JSON.parse(localStorage.getItem(LSK)||'null');if(ls&&ls.done){doneBy=ls.done;if(ls.cote)cote=ls.cote;if(ls.dep)DEP=ls.dep}}catch(e){}
 const eur=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const fc=c=>c.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const box=document.getElementById('rows');
@@ -97,7 +101,8 @@ function build(){
   });
   document.getElementById('ttl').textContent='Cote '+fc(cote);
   const last=plan[N-1];
-  document.getElementById('sub').textContent=DEP+' € → '+eur(last?last.tot:DEP)+' en '+N+' paris';
+  document.getElementById('depv').textContent=eur(DEP);
+  document.getElementById('sub').textContent=eur(DEP)+' → '+eur(last?last.tot:DEP)+' en '+N+' paris';
   paint();
 }
 function paint(){
@@ -134,15 +139,25 @@ function valid(){const v=parseFloat(String(ci.value).replace(',','.').replace(/\
 tb.addEventListener('click',openEdit);
 document.getElementById('cok').addEventListener('click',valid);
 ci.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();valid()}if(e.key==='Escape')closeEdit()});
+
+const dbtn=document.getElementById('depbtn'),dbx=document.getElementById('dbox'),di=document.getElementById('di'),de=document.getElementById('derr');
+function openDep(){dbtn.style.display='none';dbx.classList.add('on');di.value=fc(DEP);de.textContent='';di.focus();di.select()}
+function closeDep(){dbx.classList.remove('on');dbtn.style.display='';de.textContent=''}
+function validDep(){const v=parseFloat(String(di.value).replace(/\s/g,'').replace('€','').replace(',','.'));
+  if(!(v>0&&v<OBJ)){de.textContent='Mets une mise de départ, par exemple 20';return}
+  closeDep();DEP=Math.round(v*100)/100;build();save()}
+dbtn.addEventListener('click',openDep);
+document.getElementById('dok').addEventListener('click',validDep);
+di.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();validDep()}if(e.key==='Escape')closeDep()});
 let art=null,timer=null;
 if(window.claude&&window.claude.use){window.claude.use('artifact').then(a=>{art=a}).catch(()=>{})}
 function page(){
-  const st=JSON.stringify({cote,done:doneBy}).replace(/</g,'\\u003c');
+  const st=JSON.stringify({cote,dep:DEP,done:doneBy}).replace(/</g,'\\u003c');
   return '<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<title>Paris cote 1,20</title>\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap\">\n<style>'+CSS+'</style>\n</head>\n<body>\n<script type="application/json" id="state">'+st+'</scr'+'ipt>\n<scr'+'ipt>'+APP+'</scr'+'ipt>\n</body>\n</html>\n';
 }
 window.__page=page;
 function save(){
-  try{localStorage.setItem(LSK,JSON.stringify({cote,done:doneBy}))}catch(e){}
+  try{localStorage.setItem(LSK,JSON.stringify({cote,dep:DEP,done:doneBy}))}catch(e){}
   clearTimeout(timer);
   timer=setTimeout(()=>{if(art)art.publish(page()).catch(()=>{})},900);
 }
