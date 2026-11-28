@@ -63,6 +63,11 @@ header .line{width:140px;height:1px;margin:10px auto 8px;background:linear-gradi
 .depbtn b{font-size:1.5rem;font-weight:700}
 .depbtn i{font-style:normal;color:var(--gold2)}
 .cbox .dlab{font-size:1.6rem}
+.stat.chance{margin-top:12px;display:grid;grid-template-columns:1fr auto;align-items:baseline;column-gap:12px}
+.stat.chance small{grid-column:1/3}
+.stat.chance b{font-size:1.5rem}
+.stat.chance span{font-size:1.25rem;font-weight:700;color:var(--gold2);text-align:right}
+.stat.chance em{grid-column:1/3;font-style:normal;font-size:.75rem;color:var(--dim);margin-top:4px}
 </style>
 </head>
 <body>
@@ -70,7 +75,7 @@ header .line{width:140px;height:1px;margin:10px auto 8px;background:linear-gradi
 <script>
 (function(){
 const APP=document.currentScript.textContent;
-const SHELL="<div class=\"wrap\">\n<header>\n  <button class=\"ttlbtn\" id=\"ttlbtn\"><h1 class=\"or\" id=\"ttl\">Cote 1,20</h1></button>\n  <div class=\"cbox\" id=\"cbox\"><label class=\"or\" for=\"ci\">Cote</label><input id=\"ci\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"cok\">OK</button></div>\n  <div class=\"cerr\" id=\"cerr\"></div>\n  <div class=\"edit\" id=\"edit\">Touche la cote ou la mise de départ pour les changer</div>\n  <div class=\"line\"></div>\n  <button class=\"depbtn\" id=\"depbtn\"><span>Mise de départ</span><b class=\"or\" id=\"depv\"></b><i>✎</i></button>\n  <div class=\"cbox\" id=\"dbox\"><label class=\"or dlab\" for=\"di\">Départ</label><input id=\"di\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"dok\">OK</button></div>\n  <div class=\"cerr\" id=\"derr\"></div>\n  <div class=\"sub\" id=\"sub\"></div>\n  <div class=\"stats\">\n    <div class=\"stat\"><small>Paris gagnés</small><b class=\"or\" id=\"cnt\"></b></div>\n    <div class=\"stat\"><small>Total actuel</small><b class=\"or\" id=\"cur\"></b></div>\n  </div>\n  <div class=\"bar\"><i id=\"prog\"></i></div>\n</header>\n<div class=\"rows\" id=\"rows\"></div>\n<div class=\"note\" id=\"note\">Touche un pari pour le valider. Touche-le encore pour l'enlever. Le crayon ✎ sert à changer la mise ou la cote d'un pari.</div>\n</div>\n<div class=\"sheet\" id=\"sheet\"><div class=\"sbox\"><h2 class=\"or\" id=\"sh\">Pari</h2><label for=\"sm\">Mise (€)</label><input id=\"sm\" inputmode=\"decimal\" autocomplete=\"off\"><label for=\"sc\">Cote</label><input id=\"sc\" inputmode=\"decimal\" autocomplete=\"off\"><div class=\"sp\" id=\"sp\"></div><div class=\"cerr\" id=\"se\"></div><div class=\"sbtns\"><button id=\"sno\">Annuler</button><button class=\"gold\" id=\"sok\">OK</button></div><div class=\"sbtns\"><button id=\"sreset\">Remettre comme avant</button></div></div></div>\n";
+const SHELL="<div class=\"wrap\">\n<header>\n  <button class=\"ttlbtn\" id=\"ttlbtn\"><h1 class=\"or\" id=\"ttl\">Cote 1,20</h1></button>\n  <div class=\"cbox\" id=\"cbox\"><label class=\"or\" for=\"ci\">Cote</label><input id=\"ci\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"cok\">OK</button></div>\n  <div class=\"cerr\" id=\"cerr\"></div>\n  <div class=\"edit\" id=\"edit\">Touche la cote ou la mise de départ pour les changer</div>\n  <div class=\"line\"></div>\n  <button class=\"depbtn\" id=\"depbtn\"><span>Mise de départ</span><b class=\"or\" id=\"depv\"></b><i>✎</i></button>\n  <div class=\"cbox\" id=\"dbox\"><label class=\"or dlab\" for=\"di\">Départ</label><input id=\"di\" inputmode=\"decimal\" autocomplete=\"off\"><button id=\"dok\">OK</button></div>\n  <div class=\"cerr\" id=\"derr\"></div>\n  <div class=\"sub\" id=\"sub\"></div>\n  <div class=\"stats\">\n    <div class=\"stat\"><small>Paris gagnés</small><b class=\"or\" id=\"cnt\"></b></div>\n    <div class=\"stat\"><small>Total actuel</small><b class=\"or\" id=\"cur\"></b></div>\n  </div>\n  <div class=\"bar\"><i id=\"prog\"></i></div>\n  <div class=\"stat chance\"><small>Chance d'arriver au bout</small><b class=\"or\" id=\"chn\"></b><span id=\"chp\"></span><em>Au mieux : sans la marge du bookmaker, qui la rend encore plus faible.</em></div>\n</header>\n<div class=\"rows\" id=\"rows\"></div>\n<div class=\"note\" id=\"note\">Touche un pari pour le valider. Touche-le encore pour l'enlever. Le crayon ✎ sert à changer la mise ou la cote d'un pari.</div>\n</div>\n<div class=\"sheet\" id=\"sheet\"><div class=\"sbox\"><h2 class=\"or\" id=\"sh\">Pari</h2><label for=\"sm\">Mise (€)</label><input id=\"sm\" inputmode=\"decimal\" autocomplete=\"off\"><label for=\"sc\">Cote</label><input id=\"sc\" inputmode=\"decimal\" autocomplete=\"off\"><div class=\"sp\" id=\"sp\"></div><div class=\"cerr\" id=\"se\"></div><div class=\"sbtns\"><button id=\"sno\">Annuler</button><button class=\"gold\" id=\"sok\">OK</button></div><div class=\"sbtns\"><button id=\"sreset\">Remettre comme avant</button></div></div></div>\n";
 document.body.insertAdjacentHTML('afterbegin',SHELL);
 const CSS=document.querySelector('style').textContent;
 let DEP=30;const OBJ=10000;
@@ -111,6 +116,11 @@ function paint(){
   document.getElementById('cnt').textContent=done.size+' / '+N;
   document.getElementById('cur').textContent=eur(last?plan[last-1].tot:DEP);
   document.getElementById('prog').style.width=(done.size/N*100)+'%';
+  let pr=1;for(const q of plan){if(q.n>last)pr*=1/q.c}
+  const chn=document.getElementById('chn'),chp=document.getElementById('chp');
+  if(pr>=0.9999){chn.textContent='Objectif atteint !';chp.textContent='100 %'}
+  else{chn.textContent='1 chance sur '+Math.round(1/pr).toLocaleString('fr-FR');
+    const pc=pr*100;chp.textContent=(pc<0.01?'moins de 0,01':pc.toLocaleString('fr-FR',{minimumFractionDigits:pc<1?2:1,maximumFractionDigits:pc<1?2:1}))+' %'}
 }
 const sh=document.getElementById('sheet'),sm=document.getElementById('sm'),sc=document.getElementById('sc'),sp=document.getElementById('sp'),se=document.getElementById('se');let cur=null;
 const num=v=>parseFloat(String(v).replace(/\s/g,'').replace('€','').replace(',','.'));
